@@ -1,5 +1,11 @@
-// Content script to extract headings from Substack editor
+// Content script to extract headings and title from Substack editor
 (function() {
+  // Get post title (it's a textarea, so use .value)
+  const titleEl = document.querySelector('[data-testid="post-title"]') ||
+                  document.querySelector('.page-title');
+  const postTitle = titleEl ? (titleEl.value || titleEl.textContent || '').trim() : '';
+
+  // Get headings
   const headings = [];
   const selector = '.post-editor.markup h1, .post-editor.markup h2, .post-editor.markup h3, .post-editor.markup h4';
   const elements = document.querySelectorAll(selector);
@@ -14,5 +20,5 @@
     }
   });
 
-  return headings;
+  return { postTitle, headings };
 })();

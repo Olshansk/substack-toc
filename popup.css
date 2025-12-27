@@ -13,6 +13,40 @@ h1 {
   color: #333;
 }
 
+#inject-btn {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  background: #FF6719;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#inject-btn:hover:not(:disabled) {
+  background: #e55a14;
+}
+
+#inject-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 12px 0;
+}
+
+h2 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+}
+
 #toc-list {
   margin: 0;
   padding-left: 24px;

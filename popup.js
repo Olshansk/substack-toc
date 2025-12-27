@@ -2,6 +2,7 @@
 function generateSlug(text) {
   return text
     .toLowerCase()
+    .replace(/[0-9]/g, '')    // Remove numbers
     .replace(/[^\w\s-]/g, '') // Remove special chars except hyphens
     .replace(/\s+/g, '-')     // Replace spaces with hyphens
     .replace(/-+/g, '-')      // Collapse multiple hyphens
@@ -22,15 +23,21 @@ function buildAnchorUrl(subdomain, postId, slug) {
   return `https://${subdomain}.substack.com/i/${postId}/${slug}`;
 }
 
+// Store ToC data for injection
+let tocData = [];
+let currentTab = null;
+
 // Main logic
 async function init() {
   const loadingEl = document.getElementById('loading');
   const errorEl = document.getElementById('error');
   const tocList = document.getElementById('toc-list');
+  const injectBtn = document.getElementById('inject-btn');
 
   try {
     // Get current tab
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    currentTab = tab;
 
     // Check if we're on a Substack edit page
     if (!tab.url || !tab.url.includes('substack.com/publish/post/')) {
@@ -56,7 +63,13 @@ async function init() {
       files: ['content.js']
     });
 
-    const headings = results[0]?.result || [];
+    const { postTitle, headings } = results[0]?.result || { postTitle: '', headings: [] };
+
+    // Update title
+    const titleEl = document.querySelector('h1');
+    if (postTitle) {
+      titleEl.textContent = `ToC - ${postTitle}`;
+    }
 
     loadingEl.style.display = 'none';
 
@@ -66,25 +79,87 @@ async function init() {
       return;
     }
 
-    // Build ToC
-    headings.forEach(heading => {
-      const slug = generateSlug(heading.text);
-      const url = buildAnchorUrl(subdomain, postId, slug);
+    // Build ToC data and display (using post ID from edit URL)
+    tocData = headings.map(heading => ({
+      text: heading.text,
+      url: buildAnchorUrl(subdomain, postId, generateSlug(heading.text))
+    }));
 
+    tocData.forEach(item => {
       const li = document.createElement('li');
       const a = document.createElement('a');
-      a.href = url;
-      a.textContent = heading.text;
+      a.href = item.url;
+      a.textContent = item.text;
       a.target = '_blank';
       li.appendChild(a);
       tocList.appendChild(li);
     });
+
+    // Enable inject button
+    injectBtn.disabled = false;
 
   } catch (err) {
     loadingEl.style.display = 'none';
     errorEl.style.display = 'block';
     errorEl.textContent = 'Error: ' + err.message;
   }
+}
+
+// Handle inject button click
+document.getElementById('inject-btn').addEventListener('click', async () => {
+  if (!currentTab || tocData.length === 0) return;
+
+  const injectBtn = document.getElementById('inject-btn');
+  injectBtn.disabled = true;
+  injectBtn.textContent = 'Injecting...';
+
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId: currentTab.id },
+      func: injectToc,
+      args: [tocData]
+    });
+
+    injectBtn.textContent = 'Injected!';
+    setTimeout(() => window.close(), 500);
+
+  } catch (err) {
+    injectBtn.textContent = 'Error';
+    console.error('Inject error:', err);
+  }
+});
+
+// This function runs in the page context
+function injectToc(tocData) {
+  // Find the ProseMirror editor
+  const editor = document.querySelector('.ProseMirror');
+  if (!editor) {
+    alert('Could not find editor');
+    return;
+  }
+
+  // Build ToC HTML
+  let tocHtml = '<h1>Table of Contents</h1><ol>';
+  tocData.forEach(item => {
+    tocHtml += `<li><a href="${item.url}">${item.text}</a></li>`;
+  });
+  tocHtml += '</ol><p></p>';
+
+  // Focus editor
+  editor.focus();
+
+  // Create and dispatch a paste event with HTML content
+  const dataTransfer = new DataTransfer();
+  dataTransfer.setData('text/html', tocHtml);
+  dataTransfer.setData('text/plain', tocData.map((item, i) => `${i + 1}. ${item.text}`).join('\n'));
+
+  const pasteEvent = new ClipboardEvent('paste', {
+    bubbles: true,
+    cancelable: true,
+    clipboardData: dataTransfer
+  });
+
+  editor.dispatchEvent(pasteEvent);
 }
 
 init();
