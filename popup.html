@@ -5,15 +5,37 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <h1>ToC</h1>
-  <button id="inject-btn" disabled>Inject</button>
-  <hr>
-  <h2>ToC Preview</h2>
-  <div id="content">
-    <p id="loading">Loading...</p>
-    <p id="error" style="display: none;"></p>
-    <ol id="toc-list"></ol>
-  </div>
+  <header>
+    <h1 id="title">Substack ToC</h1>
+    <p id="subtitle" class="subtitle"></p>
+  </header>
+
+  <main>
+    <div id="loading" class="state-message">
+      <span class="spinner"></span>
+      <span>Scanning for headings...</span>
+    </div>
+
+    <div id="error" class="state-message error" style="display: none;"></div>
+
+    <div id="content" style="display: none;">
+      <div class="toc-header">
+        <span class="toc-count"></span>
+        <button id="copy-all" class="btn-secondary" title="Copy all links as markdown">
+          Copy All
+        </button>
+      </div>
+
+      <ol id="toc-list"></ol>
+
+      <button id="inject-btn" class="btn-primary" disabled>
+        Inject into Post
+      </button>
+
+      <p class="hint">Inserts ToC at cursor position in editor</p>
+    </div>
+  </main>
+
   <script src="popup.js"></script>
 </body>
 </html>

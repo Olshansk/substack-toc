@@ -9,6 +9,18 @@ function generateSlug(text) {
     .replace(/^-|-$/g, '');   // Trim hyphens from ends
 }
 
+// Track slug usage to handle duplicates
+const slugCounts = new Map();
+
+function getUniqueSlug(text) {
+  const baseSlug = generateSlug(text);
+  const count = slugCounts.get(baseSlug) || 0;
+  slugCounts.set(baseSlug, count + 1);
+
+  // First occurrence has no suffix, subsequent ones get -1, -2, etc.
+  return count === 0 ? baseSlug : `${baseSlug}-${count}`;
+}
+
 // Extract post ID and subdomain from URL
 function parseSubstackUrl(url) {
   const urlObj = new URL(url);
@@ -23,6 +35,22 @@ function buildAnchorUrl(subdomain, postId, slug) {
   return `https://${subdomain}.substack.com/i/${postId}/${slug}`;
 }
 
+// Copy text to clipboard with visual feedback
+async function copyToClipboard(text, button) {
+  try {
+    await navigator.clipboard.writeText(text);
+    const original = button.textContent;
+    button.textContent = 'Copied!';
+    button.classList.add('copied');
+    setTimeout(() => {
+      button.textContent = original;
+      button.classList.remove('copied');
+    }, 1500);
+  } catch (err) {
+    console.error('Copy failed:', err);
+  }
+}
+
 // Store ToC data for injection
 let tocData = [];
 let currentTab = null;
@@ -31,8 +59,12 @@ let currentTab = null;
 async function init() {
   const loadingEl = document.getElementById('loading');
   const errorEl = document.getElementById('error');
+  const contentEl = document.getElementById('content');
   const tocList = document.getElementById('toc-list');
   const injectBtn = document.getElementById('inject-btn');
+  const subtitleEl = document.getElementById('subtitle');
+  const tocCountEl = document.querySelector('.toc-count');
+  const copyAllBtn = document.getElementById('copy-all');
 
   try {
     // Get current tab
@@ -42,7 +74,7 @@ async function init() {
     // Check if we're on a Substack edit page
     if (!tab.url || !tab.url.includes('substack.com/publish/post/')) {
       loadingEl.style.display = 'none';
-      errorEl.style.display = 'block';
+      errorEl.style.display = 'flex';
       errorEl.textContent = 'Open a Substack post in edit mode first.';
       return;
     }
@@ -52,7 +84,7 @@ async function init() {
 
     if (!postId) {
       loadingEl.style.display = 'none';
-      errorEl.style.display = 'block';
+      errorEl.style.display = 'flex';
       errorEl.textContent = 'Could not find post ID in URL.';
       return;
     }
@@ -65,42 +97,70 @@ async function init() {
 
     const { postTitle, headings } = results[0]?.result || { postTitle: '', headings: [] };
 
-    // Update title
-    const titleEl = document.querySelector('h1');
+    // Update subtitle with post title
     if (postTitle) {
-      titleEl.textContent = `ToC - ${postTitle}`;
+      subtitleEl.textContent = postTitle;
     }
 
     loadingEl.style.display = 'none';
 
     if (headings.length === 0) {
-      errorEl.style.display = 'block';
+      errorEl.style.display = 'flex';
       errorEl.textContent = 'No headings found in this post.';
       return;
     }
 
+    // Show content section
+    contentEl.style.display = 'block';
+    tocCountEl.textContent = `${headings.length} heading${headings.length === 1 ? '' : 's'}`;
+
     // Build ToC data and display (using post ID from edit URL)
+    // Reset slug counts for each new page load
+    slugCounts.clear();
     tocData = headings.map(heading => ({
       text: heading.text,
-      url: buildAnchorUrl(subdomain, postId, generateSlug(heading.text))
+      url: buildAnchorUrl(subdomain, postId, getUniqueSlug(heading.text))
     }));
 
-    tocData.forEach(item => {
+    tocData.forEach((item, index) => {
       const li = document.createElement('li');
+
+      const num = document.createElement('span');
+      num.className = 'toc-number';
+      num.textContent = index + 1;
+
       const a = document.createElement('a');
       a.href = item.url;
       a.textContent = item.text;
+      a.title = item.text;
       a.target = '_blank';
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'copy-link';
+      copyBtn.textContent = 'Copy';
+      copyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        copyToClipboard(item.url, copyBtn);
+      });
+
+      li.appendChild(num);
       li.appendChild(a);
+      li.appendChild(copyBtn);
       tocList.appendChild(li);
     });
 
     // Enable inject button
     injectBtn.disabled = false;
 
+    // Copy all button handler
+    copyAllBtn.addEventListener('click', () => {
+      const markdown = tocData.map((item, i) => `${i + 1}. [${item.text}](${item.url})`).join('\n');
+      copyToClipboard(markdown, copyAllBtn);
+    });
+
   } catch (err) {
     loadingEl.style.display = 'none';
-    errorEl.style.display = 'block';
+    errorEl.style.display = 'flex';
     errorEl.textContent = 'Error: ' + err.message;
   }
 }
@@ -120,11 +180,13 @@ document.getElementById('inject-btn').addEventListener('click', async () => {
       args: [tocData]
     });
 
-    injectBtn.textContent = 'Injected!';
-    setTimeout(() => window.close(), 500);
+    injectBtn.textContent = 'Done!';
+    injectBtn.classList.add('success');
+    setTimeout(() => window.close(), 800);
 
   } catch (err) {
-    injectBtn.textContent = 'Error';
+    injectBtn.textContent = 'Error - Try Again';
+    injectBtn.disabled = false;
     console.error('Inject error:', err);
   }
 });

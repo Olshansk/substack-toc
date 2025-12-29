@@ -1,77 +1,227 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
-  width: 320px;
-  padding: 12px;
+  width: 340px;
+  padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 14px;
   margin: 0;
+  background: #fafafa;
+}
+
+header {
+  background: linear-gradient(135deg, #FF6719 0%, #ff8a4c 100%);
+  padding: 16px;
+  color: white;
 }
 
 h1 {
-  margin: 0 0 12px 0;
+  margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #333;
 }
 
-#inject-btn {
+.subtitle {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+main {
+  padding: 16px;
+}
+
+/* State messages (loading, error) */
+.state-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  color: #666;
+}
+
+.state-message.error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e5e5e5;
+  border-top-color: #FF6719;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ToC header row */
+.toc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.toc-count {
+  font-size: 12px;
+  color: #888;
+  font-weight: 500;
+}
+
+/* Buttons */
+.btn-primary {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   font-size: 14px;
   font-weight: 600;
-  background: #FF6719;
+  background: linear-gradient(135deg, #FF6719 0%, #ff8a4c 100%);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 16px;
 }
 
-#inject-btn:hover:not(:disabled) {
-  background: #e55a14;
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 103, 25, 0.3);
 }
 
-#inject-btn:disabled {
-  background: #ccc;
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  background: #d1d5db;
   cursor: not-allowed;
 }
 
-hr {
-  border: none;
-  border-top: 1px solid #ddd;
-  margin: 12px 0;
+.btn-primary.success {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
 }
 
-h2 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
+.btn-secondary {
+  padding: 6px 12px;
+  font-size: 12px;
   font-weight: 500;
+  background: white;
   color: #666;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
+.btn-secondary:hover {
+  background: #f5f5f5;
+  border-color: #d1d5db;
+}
+
+.btn-secondary.copied {
+  background: #ecfdf5;
+  border-color: #10b981;
+  color: #10b981;
+}
+
+/* ToC list */
 #toc-list {
   margin: 0;
-  padding-left: 24px;
+  padding: 0;
+  list-style: none;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  max-height: 280px;
+  overflow-y: auto;
 }
 
 #toc-list li {
-  margin-bottom: 8px;
-  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 8px;
+}
+
+#toc-list li:last-child {
+  border-bottom: none;
+}
+
+#toc-list li:hover {
+  background: #fafafa;
+}
+
+.toc-number {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
 }
 
 #toc-list a {
-  color: #0066cc;
+  flex: 1;
+  color: #333;
   text-decoration: none;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 #toc-list a:hover {
-  text-decoration: underline;
+  color: #FF6719;
 }
 
-#error {
-  color: #cc0000;
-  margin: 0;
+.copy-link {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  font-size: 11px;
+  background: transparent;
+  color: #999;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 
-#loading {
+#toc-list li:hover .copy-link {
+  opacity: 1;
+}
+
+.copy-link:hover {
+  background: #f0f0f0;
   color: #666;
-  margin: 0;
+}
+
+.copy-link.copied {
+  color: #10b981;
+}
+
+/* Hint text */
+.hint {
+  margin: 8px 0 0 0;
+  font-size: 11px;
+  color: #999;
+  text-align: center;
 }
