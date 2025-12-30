@@ -7,6 +7,7 @@ unpublished_files/
 # Build artifacts
 *.zip
 dist/
+build/
 
 # OS files
 .DS_Store

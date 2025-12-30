@@ -66,18 +66,13 @@ You can also:
 ## Development
 
 ```bash
-# Show available commands
-make help
-
-# Validate all extension files exist
-make validate
-
-# Create release zip
-make zip
-
-# Bump version
-make bump-patch  # 1.0.0 -> 1.0.1
-make bump-minor  # 1.0.0 -> 1.1.0
+make help            # List all targets
+make dev-info        # Print name and version
+make dev-start       # Steps to load in Chrome
+make dev-clean       # Delete build directories
+make build-validate  # Check required files exist
+make build-zip       # Create zip (no version bump)
+make build-release   # Bump version + create zip
 ```
 
 To test changes:
