@@ -35,10 +35,30 @@ function buildAnchorUrl(subdomain, postId, slug) {
   return `https://${subdomain}.substack.com/i/${postId}/${slug}`;
 }
 
-// Copy text to clipboard with visual feedback
-async function copyToClipboard(text, button) {
+// Copy rich text (HTML + plain text) to clipboard with visual feedback
+function copyRichText(html, plainText, button) {
   try {
-    await navigator.clipboard.writeText(text);
+    // Create a temporary container with the HTML
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    document.body.appendChild(container);
+
+    // Select the content
+    const range = document.createRange();
+    range.selectNodeContents(container);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    // Copy using execCommand (reliable for rich text in extensions)
+    document.execCommand('copy');
+
+    // Cleanup
+    selection.removeAllRanges();
+    document.body.removeChild(container);
+
     const original = button.textContent;
     button.textContent = 'Copied!';
     button.classList.add('copied');
@@ -140,7 +160,8 @@ async function init() {
       copyBtn.textContent = 'Copy';
       copyBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        copyToClipboard(item.url, copyBtn);
+        const html = `<a href="${item.url}">${item.text}</a>`;
+        copyRichText(html, item.text, copyBtn);
       });
 
       li.appendChild(num);
@@ -154,8 +175,9 @@ async function init() {
 
     // Copy all button handler
     copyAllBtn.addEventListener('click', () => {
-      const markdown = tocData.map((item, i) => `${i + 1}. [${item.text}](${item.url})`).join('\n');
-      copyToClipboard(markdown, copyAllBtn);
+      const html = '<ol>' + tocData.map(item => `<li><a href="${item.url}">${item.text}</a></li>`).join('') + '</ol>';
+      const plainText = tocData.map((item, i) => `${i + 1}. ${item.text}`).join('\n');
+      copyRichText(html, plainText, copyAllBtn);
     });
 
   } catch (err) {
