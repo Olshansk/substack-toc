@@ -75,6 +75,8 @@ make build-zip       # Create zip (no version bump)
 make build-release   # Bump version + create zip
 ```
 
+[Chrome Web Store Developer Console](https://chrome.google.com/webstore/devconsole/446b693b-d8b6-4077-b9b3-e50be55ad3d6/gppehidldaogdcnmnkjhdknlkmaigdph/edit/privacy)
+
 To test changes:
 1. Make your edits
 2. Go to `chrome://extensions`

@@ -42,6 +42,12 @@ Injects the generated Table of Contents HTML into the Substack post editor. The 
 
 Required for chrome.scripting.executeScript to inject content scripts into Substack editor pages. The extension only operates on Substack domains where users edit their posts.
 
+## Privacy Practices Tab
+
+### Host permission justification
+
+This extension requires access to substack.com to read headings from the post editor and inject the generated Table of Contents. It only activates on Substack's post editing pages (/publish/post/*) and does not access any other websites or user data.
+
 ## Test Instructions
 
 1. Go to https://substack.com and sign in (or create a free account)
