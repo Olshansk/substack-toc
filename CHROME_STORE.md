@@ -38,15 +38,9 @@ Reads heading elements (H1-H4) from the current Substack editor tab to generate 
 
 Injects the generated Table of Contents HTML into the Substack post editor. The extension uses chrome.scripting.executeScript to insert the formatted ToC at the user's cursor position.
 
-### clipboardWrite
+### Host Permission: *://*.substack.com/*
 
-Copies Table of Contents links to the user's clipboard when they click "Copy" or "Copy All" buttons in the extension popup.
-
-## Host Permissions
-
-### *://*.substack.com/*
-
-The extension only operates on Substack domains where users edit their posts.
+Required for chrome.scripting.executeScript to inject content scripts into Substack editor pages. The extension only operates on Substack domains where users edit their posts.
 
 ## Test Instructions
 

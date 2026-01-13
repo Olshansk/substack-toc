@@ -3,7 +3,7 @@
   "name": "Substack ToC",
   "description": "Generate Table of Contents with anchor links for Substack posts",
   "version": "1.0.3",
-  "permissions": ["activeTab", "scripting", "clipboardWrite"],
+  "permissions": ["activeTab", "scripting"],
   "host_permissions": ["*://*.substack.com/*"],
   "action": {
     "default_popup": "popup.html",
