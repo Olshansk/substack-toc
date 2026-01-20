@@ -11,6 +11,7 @@ INCLUDE_FILES := \
 	popup.css \
 	popup.js \
 	content.js \
+	toolbar.js \
 	icons
 
 .PHONY: _build-zip-internal
@@ -69,7 +70,7 @@ build-zip: _build-zip-internal ## Create zip without version bump
 .PHONY: build-validate
 build-validate: ## Check all required extension files exist
 	@ERRORS=0; \
-	for f in manifest.json popup.html popup.css popup.js content.js; do \
+	for f in manifest.json popup.html popup.css popup.js content.js toolbar.js; do \
 		if [ ! -f "$$f" ]; then \
 			printf "$(RED)$(CROSS) Missing: $$f$(RESET)\n"; \
 			ERRORS=$$((ERRORS + 1)); \
