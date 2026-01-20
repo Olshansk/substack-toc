@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Substack ToC",
   "description": "Generate Table of Contents with anchor links for Substack posts",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "permissions": ["activeTab", "scripting"],
   "host_permissions": ["*://*.substack.com/*"],
   "action": {
