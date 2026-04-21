@@ -1,12 +1,57 @@
-// Generate slug from heading text (matches Substack's algorithm)
+// Generate slug from heading text (matches Substack's algorithm).
+// NOTE: Substack's slugs preserve digits — do not strip [0-9].
 function generateSlug(text) {
   return text
     .toLowerCase()
-    .replace(/[0-9]/g, '')    // Remove numbers
-    .replace(/[^\w\s-]/g, '') // Remove special chars except hyphens
-    .replace(/\s+/g, '-')     // Replace spaces with hyphens
-    .replace(/-+/g, '-')      // Collapse multiple hyphens
-    .replace(/^-|-$/g, '');   // Trim hyphens from ends
+    .replace(/[^\w\s-]/g, '') // Drop punctuation (\w keeps a-z, 0-9, _)
+    .replace(/\s+/g, '-')     // Spaces → hyphens
+    .replace(/-+/g, '-')      // Collapse repeats
+    .replace(/^-|-$/g, '');   // Trim edge hyphens
+}
+
+// Compute per-item depth, normalized so the shallowest heading on the page is 0.
+function computeDepths(tocData) {
+  if (!tocData.length) return [];
+  const minLevel = Math.min(...tocData.map(i => i.level));
+  return tocData.map(i => Math.max(0, i.level - minLevel));
+}
+
+// Hierarchical numbers: [0,1,1,0] -> ["1","1.1","1.2","2"].
+function computeHierarchicalNumbers(depths) {
+  const counters = [];
+  return depths.map(d => {
+    counters.length = Math.min(counters.length, d + 1);
+    while (counters.length < d + 1) counters.push(0);
+    counters[d]++;
+    return counters.join('.');
+  });
+}
+
+// Render tocData as a nested <ol>...</ol> HTML string.
+function renderNestedHtml(tocData) {
+  if (!tocData.length) return '';
+  const depths = computeDepths(tocData);
+  let html = '';
+  let openDepth = -1;
+  tocData.forEach((item, i) => {
+    const d = depths[i];
+    if (d > openDepth) {
+      while (openDepth < d) { html += '<ol>'; openDepth++; }
+    } else {
+      while (openDepth > d) { html += '</li></ol>'; openDepth--; }
+      html += '</li>';
+    }
+    html += `<li><a href="${item.url}">${item.text}</a>`;
+  });
+  while (openDepth >= 0) { html += '</li></ol>'; openDepth--; }
+  return html;
+}
+
+// Render tocData as indented plaintext with hierarchical numbering.
+function renderIndentedText(tocData) {
+  const depths = computeDepths(tocData);
+  const numbers = computeHierarchicalNumbers(depths);
+  return tocData.map((item, i) => `${'  '.repeat(depths[i])}${numbers[i]}. ${item.text}`).join('\n');
 }
 
 // Track slug usage to handle duplicates
@@ -139,15 +184,34 @@ async function init() {
     slugCounts.clear();
     tocData = headings.map(heading => ({
       text: heading.text,
+      level: heading.level,
       url: buildAnchorUrl(subdomain, postId, getUniqueSlug(heading.text))
     }));
 
+    const depths = computeDepths(tocData);
+    const numbers = computeHierarchicalNumbers(depths);
+    const olStack = [tocList];
+
     tocData.forEach((item, index) => {
+      const d = depths[index];
+
+      while (olStack.length - 1 < d) {
+        const parent = olStack[olStack.length - 1];
+        const lastLi = parent.lastElementChild;
+        const nested = document.createElement('ol');
+        nested.className = 'toc-nested';
+        (lastLi || parent).appendChild(nested);
+        olStack.push(nested);
+      }
+      while (olStack.length - 1 > d) olStack.pop();
+
       const li = document.createElement('li');
+      const row = document.createElement('div');
+      row.className = 'toc-row';
 
       const num = document.createElement('span');
       num.className = 'toc-number';
-      num.textContent = index + 1;
+      num.textContent = numbers[index];
 
       const a = document.createElement('a');
       a.href = item.url;
@@ -164,10 +228,11 @@ async function init() {
         copyRichText(html, item.text, copyBtn);
       });
 
-      li.appendChild(num);
-      li.appendChild(a);
-      li.appendChild(copyBtn);
-      tocList.appendChild(li);
+      row.appendChild(num);
+      row.appendChild(a);
+      row.appendChild(copyBtn);
+      li.appendChild(row);
+      olStack[olStack.length - 1].appendChild(li);
     });
 
     // Enable inject button
@@ -175,8 +240,8 @@ async function init() {
 
     // Copy all button handler
     copyAllBtn.addEventListener('click', () => {
-      const html = '<ol>' + tocData.map(item => `<li><a href="${item.url}">${item.text}</a></li>`).join('') + '</ol>';
-      const plainText = tocData.map((item, i) => `${i + 1}. ${item.text}`).join('\n');
+      const html = renderNestedHtml(tocData);
+      const plainText = renderIndentedText(tocData);
       copyRichText(html, plainText, copyAllBtn);
     });
 
@@ -213,29 +278,49 @@ document.getElementById('inject-btn').addEventListener('click', async () => {
   }
 });
 
-// This function runs in the page context
+// This function runs in the page context — must be self-contained
+// (no closures over popup-side helpers).
 function injectToc(tocData) {
-  // Find the ProseMirror editor
   const editor = document.querySelector('.ProseMirror');
   if (!editor) {
     alert('Could not find editor');
     return;
   }
 
-  // Build ToC HTML
-  let tocHtml = '<h1>Table of Contents</h1><ol>';
-  tocData.forEach(item => {
-    tocHtml += `<li><a href="${item.url}">${item.text}</a></li>`;
-  });
-  tocHtml += '</ol><p></p>';
+  const minLevel = tocData.length ? Math.min(...tocData.map(i => i.level || 1)) : 1;
+  const depths = tocData.map(i => Math.max(0, (i.level || 1) - minLevel));
 
-  // Focus editor
+  let nestedOl = '';
+  let openDepth = -1;
+  tocData.forEach((item, i) => {
+    const d = depths[i];
+    if (d > openDepth) {
+      while (openDepth < d) { nestedOl += '<ol>'; openDepth++; }
+    } else {
+      while (openDepth > d) { nestedOl += '</li></ol>'; openDepth--; }
+      nestedOl += '</li>';
+    }
+    nestedOl += `<li><a href="${item.url}">${item.text}</a>`;
+  });
+  while (openDepth >= 0) { nestedOl += '</li></ol>'; openDepth--; }
+
+  const tocHtml = `<h1>Table of Contents</h1>${nestedOl}<p></p>`;
+
+  // Hierarchical numbering for the plaintext fallback.
+  const counters = [];
+  const plainText = tocData.map((item, i) => {
+    const d = depths[i];
+    counters.length = Math.min(counters.length, d + 1);
+    while (counters.length < d + 1) counters.push(0);
+    counters[d]++;
+    return `${'  '.repeat(d)}${counters.join('.')}. ${item.text}`;
+  }).join('\n');
+
   editor.focus();
 
-  // Create and dispatch a paste event with HTML content
   const dataTransfer = new DataTransfer();
   dataTransfer.setData('text/html', tocHtml);
-  dataTransfer.setData('text/plain', tocData.map((item, i) => `${i + 1}. ${item.text}`).join('\n'));
+  dataTransfer.setData('text/plain', plainText);
 
   const pasteEvent = new ClipboardEvent('paste', {
     bubbles: true,

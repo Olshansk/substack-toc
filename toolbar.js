@@ -10,11 +10,11 @@
 
   console.log('[ToC] Initializing toolbar injection');
 
-  // Generate slug from heading text (matches Substack's algorithm)
+  // Generate slug from heading text (matches Substack's algorithm).
+  // NOTE: Substack's slugs preserve digits — do not strip [0-9].
   function generateSlug(text) {
     return text
       .toLowerCase()
-      .replace(/[0-9]/g, '')
       .replace(/[^\w\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
@@ -68,17 +68,39 @@
       return;
     }
 
-    let tocHtml = '<h1>Table of Contents</h1><ol>';
-    tocData.forEach(item => {
-      tocHtml += `<li><a href="${item.url}">${item.text}</a></li>`;
+    const minLevel = tocData.length ? Math.min(...tocData.map(i => i.level || 1)) : 1;
+    const depths = tocData.map(i => Math.max(0, (i.level || 1) - minLevel));
+
+    let nestedOl = '';
+    let openDepth = -1;
+    tocData.forEach((item, i) => {
+      const d = depths[i];
+      if (d > openDepth) {
+        while (openDepth < d) { nestedOl += '<ol>'; openDepth++; }
+      } else {
+        while (openDepth > d) { nestedOl += '</li></ol>'; openDepth--; }
+        nestedOl += '</li>';
+      }
+      nestedOl += `<li><a href="${item.url}">${item.text}</a>`;
     });
-    tocHtml += '</ol><p></p>';
+    while (openDepth >= 0) { nestedOl += '</li></ol>'; openDepth--; }
+
+    const tocHtml = `<h1>Table of Contents</h1>${nestedOl}<p></p>`;
+
+    const counters = [];
+    const plainText = tocData.map((item, i) => {
+      const d = depths[i];
+      counters.length = Math.min(counters.length, d + 1);
+      while (counters.length < d + 1) counters.push(0);
+      counters[d]++;
+      return `${'  '.repeat(d)}${counters.join('.')}. ${item.text}`;
+    }).join('\n');
 
     editor.focus();
 
     const dataTransfer = new DataTransfer();
     dataTransfer.setData('text/html', tocHtml);
-    dataTransfer.setData('text/plain', tocData.map((item, i) => `${i + 1}. ${item.text}`).join('\n'));
+    dataTransfer.setData('text/plain', plainText);
 
     const pasteEvent = new ClipboardEvent('paste', {
       bubbles: true,
@@ -108,6 +130,7 @@
     const slugCounts = new Map();
     const tocData = headings.map(heading => ({
       text: heading.text,
+      level: heading.level,
       url: buildAnchorUrl(subdomain, postId, getUniqueSlug(heading.text, slugCounts))
     }));
 
