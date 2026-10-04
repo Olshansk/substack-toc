@@ -17,8 +17,8 @@ dev-start: ## Print steps to load extension in Chrome
 	@printf "\n"
 
 .PHONY: dev-clean
-dev-clean: ## Delete build/ and dist/ directories
-	@rm -rf $(BUILD_DIR) $(DIST_DIR) *.zip
+dev-clean: ## Delete generated build/ and dist/ directories
+	@rm -rf "$(BUILD_DIR)" "$(DIST_DIR)"
 	@printf "$(GREEN)$(CHECK) Cleaned$(RESET)\n"
 
 .PHONY: dev-info
@@ -26,3 +26,11 @@ dev-info: ## Print extension name and version from manifest
 	@VERSION=$$(grep '"version"' manifest.json | sed 's/.*: "\([^"]*\)".*/\1/'); \
 	NAME=$$(grep '"name"' manifest.json | sed 's/.*: "\([^"]*\)".*/\1/'); \
 	printf "$(BOLD)$$NAME$(RESET) v$$VERSION\n"
+
+.PHONY: dev-test
+dev-test: ## Run unit and browser-adapter tests without a browser
+	@node --test
+
+.PHONY: dev-check
+dev-check: dev-test build-test ## Run tests and validate the release package
+	@git diff --check

@@ -1,4 +1,11 @@
-# Privacy Policy
+# Privacy Policy <!-- omit in toc -->
+
+- [Data Collection](#data-collection)
+- [How It Works](#how-it-works)
+- [Permissions](#permissions)
+- [Third Parties](#third-parties)
+- [Contact](#contact)
+- [Changes](#changes)
 
 **Substack ToC** is a browser extension that generates a Table of Contents for Substack posts.
 
@@ -19,7 +26,9 @@ The extension requests these permissions:
 
 - **activeTab**: To read headings from the current Substack editor tab
 - **scripting**: To inject the Table of Contents into the editor
-- **clipboardWrite**: To copy links to your clipboard
+- **Host access (`*://*.substack.com/*`)**: To run the toolbar integration on Substack editor pages
+
+Copying runs in response to a button click; the manifest does not request `clipboardWrite`.
 
 These permissions are used solely to provide the extension's functionality.
 
@@ -29,10 +38,10 @@ This extension does not use analytics, tracking, or any third-party services.
 
 ## Contact
 
-For questions, open an issue at: https://github.com/olshansky/substack-toc
+For questions, open an issue at: https://github.com/Olshansk/substack-toc
 
 ## Changes
 
 Any changes to this policy will be reflected in this document.
 
-*Last updated: January 2025*
+*Last updated: October 4, 2026*

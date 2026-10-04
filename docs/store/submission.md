@@ -1,4 +1,13 @@
-# Chrome Web Store Submission Details
+# Chrome Web Store Submission Details <!-- omit in toc -->
+
+- [Single Purpose Description](#single-purpose-description)
+- [Detailed Description](#detailed-description)
+- [Permission Justifications](#permission-justifications)
+- [Privacy Practices Tab](#privacy-practices-tab)
+- [Test Instructions](#test-instructions)
+- [Privacy Policy URL](#privacy-policy-url)
+- [Category](#category)
+- [Language](#language)
 
 ## Single Purpose Description
 
@@ -58,7 +67,7 @@ This extension requires access to substack.com to read headings from the post ed
 
 ## Privacy Policy URL
 
-https://github.com/olshansky/substack-toc/blob/main/PRIVACY.md
+https://github.com/Olshansk/substack-toc/blob/main/PRIVACY.md
 
 ## Category
 

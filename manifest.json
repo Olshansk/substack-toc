@@ -3,10 +3,15 @@
   "name": "Substack ToC",
   "description": "Generate Table of Contents with anchor links for Substack posts",
   "version": "1.0.4",
-  "permissions": ["activeTab", "scripting"],
-  "host_permissions": ["*://*.substack.com/*"],
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.substack.com/*"
+  ],
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "src/popup/popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -20,8 +25,14 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.substack.com/publish/post/*"],
-      "js": ["toolbar.js"],
+      "matches": [
+        "*://*.substack.com/publish/post/*"
+      ],
+      "js": [
+        "src/shared/toc.js",
+        "src/content/editor.js",
+        "src/content/toolbar.js"
+      ],
       "run_at": "document_idle"
     }
   ]

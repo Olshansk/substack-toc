@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <title>Substack ToC</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -21,7 +22,7 @@
     <div id="content" style="display: none;">
       <div class="toc-header">
         <span class="toc-count"></span>
-        <button id="copy-all" class="btn-secondary" title="Copy all links as markdown">
+        <button id="copy-all" class="btn-secondary" title="Copy the formatted table of contents">
           Copy All
         </button>
       </div>
@@ -36,6 +37,8 @@
     </div>
   </main>
 
+  <script src="../shared/toc.js"></script>
+  <script src="../content/editor.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

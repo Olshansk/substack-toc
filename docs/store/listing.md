@@ -27,7 +27,7 @@ This extension automatically:
 - One-click ToC generation
 - Preview links before injecting
 - Copy individual anchor URLs
-- Copy full ToC as markdown
+- Copy the formatted ToC with a numbered plain-text fallback
 - Handles duplicate headings automatically
 - Works with drafts and published posts
 
@@ -52,6 +52,8 @@ Generate clickable Table of Contents with anchor links for your Substack posts. 
 
 ### Screenshots (1280x800 or 640x400)
 
+Existing screenshots: [1_store.png](screenshots/1_store.png) and [2_store.png](screenshots/2_store.png).
+
 1. **Extension popup showing ToC** - Show the popup with a real ToC preview
 2. **Before/After** - Post without ToC vs. with injected ToC
 3. **Copy feature** - Hovering over a link showing the copy button
@@ -73,4 +75,5 @@ Productivity
 | `activeTab` | Required to read headings from the current Substack post and inject the ToC |
 | `scripting` | Required to execute content script that extracts headings and injects ToC HTML |
 
-No host permissions needed - extension only activates when user clicks the icon.
+The manifest also requests `*://*.substack.com/*` host access.
+The toolbar content scripts run automatically on `/publish/post/*` editor pages.

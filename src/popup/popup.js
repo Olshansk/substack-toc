@@ -1,0 +1,191 @@
+'use strict';
+
+const {
+  parseSubstackUrl, buildToc, computeDepths, computeHierarchicalNumbers,
+  renderLink, renderNestedHtml, renderIndentedText, createPastePayload
+} = globalThis.SubstackToc;
+
+// Copy rich text (HTML + plain text) to clipboard with visual feedback
+function copyRichText(html, plainText, button) {
+  const container = document.createElement('div');
+  const selection = window.getSelection();
+  const handleCopy = event => {
+    event.clipboardData.setData('text/html', html);
+    event.clipboardData.setData('text/plain', plainText);
+    event.preventDefault();
+  };
+  try {
+    container.innerHTML = html;
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    document.body.appendChild(container);
+    const range = document.createRange();
+    range.selectNodeContents(container);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.addEventListener('copy', handleCopy);
+    if (!document.execCommand('copy')) throw new Error('Clipboard copy failed');
+    const original = button.textContent;
+    button.textContent = 'Copied!';
+    button.classList.add('copied');
+    setTimeout(() => {
+      button.textContent = original;
+      button.classList.remove('copied');
+    }, 1500);
+  } catch (err) {
+    document.getElementById('error').style.display = 'flex';
+    document.getElementById('error').textContent = 'Could not copy. Please try again.';
+    console.error('Copy failed:', err);
+  } finally {
+    document.removeEventListener('copy', handleCopy);
+    selection?.removeAllRanges();
+    container.remove();
+  }
+}
+
+// Store ToC data for injection
+let tocData = [];
+let currentTab = null;
+
+// Main logic
+async function init() {
+  const loadingEl = document.getElementById('loading');
+  const errorEl = document.getElementById('error');
+  const contentEl = document.getElementById('content');
+  const tocList = document.getElementById('toc-list');
+  const injectBtn = document.getElementById('inject-btn');
+  const subtitleEl = document.getElementById('subtitle');
+  const tocCountEl = document.querySelector('.toc-count');
+  const copyAllBtn = document.getElementById('copy-all');
+
+  try {
+    // Get current tab
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    currentTab = tab;
+
+    const post = parseSubstackUrl(tab?.url);
+    if (!post) {
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'flex';
+      errorEl.textContent = 'Open a Substack post in edit mode first.';
+      return;
+    }
+
+    // Inject content script and get headings
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ['src/content/editor.js', 'src/content/extract.js']
+    });
+
+    const { postTitle, headings } = results[0]?.result || { postTitle: '', headings: [] };
+
+    // Update subtitle with post title
+    if (postTitle) {
+      subtitleEl.textContent = postTitle;
+    }
+
+    loadingEl.style.display = 'none';
+
+    if (headings.length === 0) {
+      errorEl.style.display = 'flex';
+      errorEl.textContent = 'No headings found in this post.';
+      return;
+    }
+
+    // Show content section
+    contentEl.style.display = 'block';
+    tocCountEl.textContent = `${headings.length} heading${headings.length === 1 ? '' : 's'}`;
+
+    tocData = buildToc(headings, post);
+
+    const depths = computeDepths(tocData);
+    const numbers = computeHierarchicalNumbers(depths);
+    const olStack = [tocList];
+
+    tocData.forEach((item, index) => {
+      const d = depths[index];
+
+      while (olStack.length - 1 < d) {
+        const parent = olStack[olStack.length - 1];
+        const lastLi = parent.lastElementChild;
+        const nested = document.createElement('ol');
+        nested.className = 'toc-nested';
+        (lastLi || parent).appendChild(nested);
+        olStack.push(nested);
+      }
+      while (olStack.length - 1 > d) olStack.pop();
+
+      const li = document.createElement('li');
+      const row = document.createElement('div');
+      row.className = 'toc-row';
+
+      const num = document.createElement('span');
+      num.className = 'toc-number';
+      num.textContent = numbers[index];
+
+      const a = document.createElement('a');
+      a.href = item.url;
+      a.textContent = item.text;
+      a.title = item.text;
+      a.target = '_blank';
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'copy-link';
+      copyBtn.textContent = 'Copy';
+      copyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const html = renderLink(item);
+        copyRichText(html, item.text, copyBtn);
+      });
+
+      row.appendChild(num);
+      row.appendChild(a);
+      row.appendChild(copyBtn);
+      li.appendChild(row);
+      olStack[olStack.length - 1].appendChild(li);
+    });
+
+    // Enable inject button
+    injectBtn.disabled = false;
+
+    // Copy all button handler
+    copyAllBtn.addEventListener('click', () => {
+      const html = renderNestedHtml(tocData);
+      const plainText = renderIndentedText(tocData);
+      copyRichText(html, plainText, copyAllBtn);
+    });
+
+  } catch (err) {
+    loadingEl.style.display = 'none';
+    errorEl.style.display = 'flex';
+    errorEl.textContent = 'Error: ' + err.message;
+  }
+}
+
+// Handle inject button click
+document.getElementById('inject-btn').addEventListener('click', async () => {
+  if (!currentTab || tocData.length === 0) return;
+
+  const injectBtn = document.getElementById('inject-btn');
+  injectBtn.disabled = true;
+  injectBtn.textContent = 'Injecting...';
+
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId: currentTab.id },
+      func: globalThis.SubstackTocEditor.pasteToc,
+      args: [createPastePayload(tocData)]
+    });
+
+    injectBtn.textContent = 'Done!';
+    injectBtn.classList.add('success');
+    setTimeout(() => window.close(), 800);
+
+  } catch (err) {
+    injectBtn.textContent = 'Error - Try Again';
+    injectBtn.disabled = false;
+    console.error('Inject error:', err);
+  }
+});
+
+init();

@@ -1,0 +1,10 @@
+{
+  "name": "substack-toc",
+  "private": true,
+  "description": "Chrome extension for linked tables of contents in Substack posts",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test",
+    "validate": "node scripts/validate.mjs"
+  }
+}

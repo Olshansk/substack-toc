@@ -9,6 +9,7 @@ Generate clickable Table of Contents with anchor links for your Substack posts.
 - [Usage](#usage)
 - [Features](#features)
 - [Development](#development)
+- [Project Structure](#project-structure)
 - [How It Works](#how-it-works)
 - [Limitations](#limitations)
 - [License](#license)
@@ -25,14 +26,14 @@ Substack doesn't provide a built-in way to add a Table of Contents with working 
 
 ### From Chrome Web Store
 
-> Coming soon
+[Install Substack ToC](https://chromewebstore.google.com/detail/gppehidldaogdcnmnkjhdknlkmaigdph)
 
 ### Manual Installation (Developer Mode)
 
+Clone the repository:
+
 ```bash
-# Clone the repo
-git clone https://github.com/olshansky/substack-toc.git
-cd substack-toc
+git clone https://github.com/Olshansk/substack-toc.git
 ```
 
 Then in Chrome:
@@ -51,8 +52,9 @@ Then in Chrome:
 
 You can also:
 - Click any link to test it in a new tab
-- Use **Copy** to grab individual anchor URLs
-- Use **Copy All** to get the full ToC as markdown
+- Use **Copy** to copy an individual linked heading
+- Use **Copy All** to copy the formatted ToC, with numbered plain text as a fallback
+- Click **ToC** beside the list buttons in the editor toolbar to insert directly
 
 ## Features
 
@@ -60,32 +62,84 @@ You can also:
 - Generates Substack-compatible anchor URLs
 - Handles duplicate headings (adds `-1`, `-2` suffixes)
 - One-click injection into ProseMirror editor
-- Copy individual links or full markdown ToC
+- Copy individual links or the full formatted ToC
 - Works with both published and draft posts
 
 ## Development
 
+Use Node.js 22 or newer, Make, zip, and unzip.
+The extension has no runtime or development dependencies, so no npm install step is needed.
+The private Node package is named `substack-toc`; the Chrome manifest is the sole source of the release version.
+
+List available commands:
+
 ```bash
-make help            # List all targets
-make dev-info        # Print name and version
-make dev-start       # Steps to load in Chrome
-make dev-clean       # Delete build directories
-make build-validate  # Check required files exist
-make build-zip       # Create zip (no version bump)
-make build-release   # Bump version + create zip
+make help
 ```
 
-[Chrome Web Store Developer Console](https://chrome.google.com/webstore/devconsole/446b693b-d8b6-4077-b9b3-e50be55ad3d6/gppehidldaogdcnmnkjhdknlkmaigdph/edit/privacy)
+Run unit tests and browser-adapter tests using lightweight test doubles (no browser):
 
-To test changes:
-1. Make your edits
-2. Go to `chrome://extensions`
-3. Click the refresh icon on the extension card
+```bash
+make dev-test
+```
+
+Run tests, validate source and the extracted release ZIP, and check whitespace:
+
+```bash
+make dev-check
+```
+
+Build a ZIP without changing the version:
+
+```bash
+make build-zip
+```
+
+When preparing a release, run the checks and choose a version bump interactively:
+
+```bash
+make build-release
+```
+
+On macOS, if Make is blocked by the Xcode license prompt and Command Line Tools are installed:
+
+```bash
+DEVELOPER_DIR=/Library/Developer/CommandLineTools make dev-check
+```
+
+After editing, reload the extension at `chrome://extensions` and refresh the Substack editor tab.
+Keep the repository root selected for **Load unpacked**; `manifest.json` remains there.
+For a reinstall smoke test, remove the development extension, load the repository root again, refresh an editor tab, and check both popup and toolbar injection in a disposable draft.
+Unit tests do not establish compatibility with Substack's live editor or Chrome clipboard behavior.
+
+Store assets and listing copy live in [docs/store/listing.md](docs/store/listing.md).
+Submission fields and manual test steps live in [docs/store/submission.md](docs/store/submission.md).
+Use the [Chrome Web Store Developer Console](https://chrome.google.com/webstore/devconsole/446b693b-d8b6-4077-b9b3-e50be55ad3d6/gppehidldaogdcnmnkjhdknlkmaigdph/edit/privacy) to upload a release; build commands do not publish it.
+
+## Project Structure
+
+```text
+manifest.json           Chrome entry points, permissions, and release version
+icons/                  Extension icons
+src/shared/toc.js       Pure slug, URL, hierarchy, and rendering functions
+src/content/            Heading extraction, paste adapter, and toolbar entry point
+src/popup/              Popup HTML, CSS, and UI entry point
+tests/                  Node unit tests and browser-adapter test doubles
+scripts/                Package validation and release helpers
+makefiles/              Build and development targets
+docs/store/             Listing copy, submission details, and screenshots
+build/                  Generated release ZIPs (ignored by Git)
+```
+
+Both browser entry points reuse `SubstackToc` and `SubstackTocEditor`.
+The shared core also exports through CommonJS for Node tests and reuse without a DOM.
+Classic scripts keep the extension bundler-free; manifest and popup script order load shared helpers before their consumers.
+The paste adapter receives pre-rendered HTML and plain text so Chrome can serialize it without closure dependencies.
 
 ## How It Works
 
 Substack uses a predictable anchor URL format:
-```
+```text
 https://{subdomain}.substack.com/i/{postId}/{slug}
 ```
 
