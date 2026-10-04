@@ -11,7 +11,9 @@
 
 ## Data Collection
 
-This extension does **not** collect, store, or transmit any user data.
+This extension does **not** collect or transmit personal data or post content.
+It stores only your Numbered/Bulleted list-style preference locally in your browser.
+The preference is not synced or sent to any external server.
 
 ## How It Works
 
@@ -26,6 +28,7 @@ The extension requests these permissions:
 
 - **activeTab**: To read headings from the current Substack editor tab
 - **scripting**: To inject the Table of Contents into the editor
+- **storage**: To remember your list-style preference locally for the popup and toolbar
 - **Host access (`*://*.substack.com/*`)**: To run the toolbar integration on Substack editor pages
 
 Copying runs in response to a button click; the manifest does not request `clipboardWrite`.

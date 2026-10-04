@@ -10,7 +10,7 @@
   const { extractPost, pasteToc } = globalThis.SubstackTocEditor;
 
   // Main ToC button click handler
-  function handleTocClick() {
+  async function handleTocClick() {
     const { headings } = extractPost();
 
     if (headings.length === 0) {
@@ -26,7 +26,8 @@
     }
 
     try {
-      pasteToc(createPastePayload(buildToc(headings, post)));
+      const listStyle = await globalThis.SubstackTocPreferences.loadListStyle();
+      pasteToc(createPastePayload(buildToc(headings, post), listStyle));
     } catch (error) {
       alert(error.message);
     }
@@ -48,7 +49,7 @@
     button.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      handleTocClick();
+      return handleTocClick();
     });
 
     return button;

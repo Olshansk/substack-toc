@@ -240,3 +240,19 @@ main {
   color: #999;
   text-align: center;
 }
+
+.list-style-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  color: #666;
+}
+
+#list-style {
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  font: inherit;
+}

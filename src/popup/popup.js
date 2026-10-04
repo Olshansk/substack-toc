@@ -4,6 +4,7 @@ const {
   parseSubstackUrl, buildToc, computeDepths, computeHierarchicalNumbers,
   renderLink, renderNestedHtml, renderIndentedText, createPastePayload
 } = globalThis.SubstackToc;
+const { loadListStyle, saveListStyle } = globalThis.SubstackTocPreferences;
 
 // Copy rich text (HTML + plain text) to clipboard with visual feedback
 function copyRichText(html, plainText, button) {
@@ -46,13 +47,15 @@ function copyRichText(html, plainText, button) {
 // Store ToC data for injection
 let tocData = [];
 let currentTab = null;
+let listStyle = 'numbered';
 
 // Main logic
 async function init() {
   const loadingEl = document.getElementById('loading');
   const errorEl = document.getElementById('error');
   const contentEl = document.getElementById('content');
-  const tocList = document.getElementById('toc-list');
+  const preview = document.getElementById('toc-preview');
+  const listStyleSelect = document.getElementById('list-style');
   const injectBtn = document.getElementById('inject-btn');
   const subtitleEl = document.getElementById('subtitle');
   const tocCountEl = document.querySelector('.toc-count');
@@ -97,52 +100,76 @@ async function init() {
     tocCountEl.textContent = `${headings.length} heading${headings.length === 1 ? '' : 's'}`;
 
     tocData = buildToc(headings, post);
+    listStyle = await loadListStyle();
+    listStyleSelect.value = listStyle;
 
-    const depths = computeDepths(tocData);
-    const numbers = computeHierarchicalNumbers(depths);
-    const olStack = [tocList];
+    function renderPreview() {
+      const listTag = listStyle === 'bulleted' ? 'ul' : 'ol';
+      const tocList = document.createElement(listTag);
+      tocList.id = 'toc-list';
+      const depths = computeDepths(tocData);
+      const numbers = computeHierarchicalNumbers(depths);
+      const listStack = [tocList];
 
-    tocData.forEach((item, index) => {
-      const d = depths[index];
+      tocData.forEach((item, index) => {
+        const d = depths[index];
 
-      while (olStack.length - 1 < d) {
-        const parent = olStack[olStack.length - 1];
-        const lastLi = parent.lastElementChild;
-        const nested = document.createElement('ol');
-        nested.className = 'toc-nested';
-        (lastLi || parent).appendChild(nested);
-        olStack.push(nested);
-      }
-      while (olStack.length - 1 > d) olStack.pop();
+        while (listStack.length - 1 < d) {
+          const parent = listStack[listStack.length - 1];
+          const lastLi = parent.lastElementChild;
+          const nested = document.createElement(listTag);
+          nested.className = 'toc-nested';
+          (lastLi || parent).appendChild(nested);
+          listStack.push(nested);
+        }
+        while (listStack.length - 1 > d) listStack.pop();
 
-      const li = document.createElement('li');
-      const row = document.createElement('div');
-      row.className = 'toc-row';
+        const li = document.createElement('li');
+        const row = document.createElement('div');
+        row.className = 'toc-row';
 
-      const num = document.createElement('span');
-      num.className = 'toc-number';
-      num.textContent = numbers[index];
+        const num = document.createElement('span');
+        num.className = 'toc-number';
+        num.textContent = listStyle === 'bulleted' ? '•' : numbers[index];
 
-      const a = document.createElement('a');
-      a.href = item.url;
-      a.textContent = item.text;
-      a.title = item.text;
-      a.target = '_blank';
+        const a = document.createElement('a');
+        a.href = item.url;
+        a.textContent = item.text;
+        a.title = item.text;
+        a.target = '_blank';
 
-      const copyBtn = document.createElement('button');
-      copyBtn.className = 'copy-link';
-      copyBtn.textContent = 'Copy';
-      copyBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const html = renderLink(item);
-        copyRichText(html, item.text, copyBtn);
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-link';
+        copyBtn.textContent = 'Copy';
+        copyBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const html = renderLink(item);
+          copyRichText(html, item.text, copyBtn);
+        });
+
+        row.appendChild(num);
+        row.appendChild(a);
+        row.appendChild(copyBtn);
+        li.appendChild(row);
+        listStack[listStack.length - 1].appendChild(li);
       });
+      preview.replaceChildren(tocList);
+    }
+    renderPreview();
 
-      row.appendChild(num);
-      row.appendChild(a);
-      row.appendChild(copyBtn);
-      li.appendChild(row);
-      olStack[olStack.length - 1].appendChild(li);
+    listStyleSelect.addEventListener('change', async () => {
+      listStyle = listStyleSelect.value;
+      renderPreview();
+      listStyleSelect.disabled = true;
+      try {
+        await saveListStyle(listStyle);
+      } catch (error) {
+        errorEl.style.display = 'flex';
+        errorEl.textContent = 'Could not save list style. The toolbar will use the previous setting.';
+        console.error('Preference error:', error);
+      } finally {
+        listStyleSelect.disabled = false;
+      }
     });
 
     // Enable inject button
@@ -150,8 +177,8 @@ async function init() {
 
     // Copy all button handler
     copyAllBtn.addEventListener('click', () => {
-      const html = renderNestedHtml(tocData);
-      const plainText = renderIndentedText(tocData);
+      const html = renderNestedHtml(tocData, listStyle);
+      const plainText = renderIndentedText(tocData, listStyle);
       copyRichText(html, plainText, copyAllBtn);
     });
 
@@ -174,7 +201,7 @@ document.getElementById('inject-btn').addEventListener('click', async () => {
     await chrome.scripting.executeScript({
       target: { tabId: currentTab.id },
       func: globalThis.SubstackTocEditor.pasteToc,
-      args: [createPastePayload(tocData)]
+      args: [createPastePayload(tocData, listStyle)]
     });
 
     injectBtn.textContent = 'Done!';

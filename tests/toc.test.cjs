@@ -64,3 +64,20 @@ test('empty input and paste payload use the same renderers', () => {
     text: toc.renderIndentedText(items)
   });
 });
+
+test('bulleted HTML and plain text preserve the same hierarchy as numbered lists', () => {
+  for (const levels of [[1, 2, 3, 4, 1], [2, 4, 3, 1], [4, 4], []]) {
+    const items = toc.buildToc(headings(levels), post);
+    assert.equal(toc.renderNestedHtml(items, 'bulleted'), toc.renderNestedHtml(items).replaceAll('<ol>', '<ul>').replaceAll('</ol>', '</ul>'));
+    const payload = toc.createPastePayload(items, 'bulleted');
+    assert.equal(payload.text, toc.renderIndentedText(items).replace(/^([ ]*)[\d.]+ /gm, '$1- '));
+    assert.equal(payload.html, `<h1>Table of Contents</h1>${toc.renderNestedHtml(items, 'bulleted')}<p></p>`);
+  }
+});
+
+test('invalid or absent list style uses the numbered default', () => {
+  const items = toc.buildToc(headings([1, 2]), post);
+  for (const style of [undefined, null, '', 'invalid', '<script>']) {
+    assert.deepEqual(toc.createPastePayload(items, style), toc.createPastePayload(items));
+  }
+});

@@ -27,7 +27,15 @@
         </button>
       </div>
 
-      <ol id="toc-list"></ol>
+      <label class="list-style-control" for="list-style">
+        List style
+        <select id="list-style">
+          <option value="numbered">Numbered</option>
+          <option value="bulleted">Bulleted</option>
+        </select>
+      </label>
+
+      <div id="toc-preview"></div>
 
       <button id="inject-btn" class="btn-primary" disabled>
         Inject into Post
@@ -38,6 +46,7 @@
   </main>
 
   <script src="../shared/toc.js"></script>
+  <script src="../shared/preferences.js"></script>
   <script src="../content/editor.js"></script>
   <script src="popup.js"></script>
 </body>

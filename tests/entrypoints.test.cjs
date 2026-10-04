@@ -10,16 +10,18 @@ function element() {
     classList: { add() {}, remove() {} },
     appendChild(child) { this.children.push(child); this.lastElementChild = child; },
     addEventListener(name, callback) { this.listeners[name] = callback; },
+    replaceChildren(...children) { this.children = children; this.lastElementChild = children.at(-1); },
     setAttribute() {}, remove() { this.removed = true; }
   };
 }
 
-async function popup({ url = 'https://example.substack.com/publish/post/123', pasteFails = false, copySucceeds = true } = {}) {
+async function popup({ url = 'https://example.substack.com/publish/post/123', pasteFails = false, copySucceeds = true, savedStyle, saveFails = false } = {}) {
   const ids = new Map();
   const node = id => { if (!ids.has(id)) ids.set(id, element()); return ids.get(id); };
   const events = {};
   const calls = [];
   const clipboard = {};
+  let storedStyle = savedStyle;
   let copiedContainer;
   const context = vm.createContext({
     SubstackToc: toc, SubstackTocEditor: { pasteToc() {} },
@@ -37,6 +39,13 @@ async function popup({ url = 'https://example.substack.com/publish/post/123', pa
       }
     },
     chrome: {
+      storage: { local: {
+        get: async () => ({ listStyle: storedStyle }),
+        set: async ({ listStyle }) => {
+          if (saveFails) throw new Error('Storage unavailable');
+          storedStyle = listStyle;
+        }
+      } },
       tabs: { query: async () => [{ id: 7, url }] },
       scripting: { executeScript: async options => {
         calls.push(options);
@@ -46,8 +55,9 @@ async function popup({ url = 'https://example.substack.com/publish/post/123', pa
       } }
     }
   });
+  vm.runInContext(readFileSync('src/shared/preferences.js', 'utf8'), context);
   await vm.runInContext(readFileSync('src/popup/popup.js', 'utf8'), context);
-  return { node, calls, clipboard, events, context, container: () => copiedContainer };
+  return { node, calls, clipboard, events, context, container: () => copiedContainer, savedStyle: () => storedStyle };
 }
 
 test('popup loads moved extraction files and sends a shared paste payload', async () => {
@@ -91,12 +101,14 @@ test('copy provides both formats and always removes temporary DOM and listener',
   }
 });
 
-test('toolbar mounts once, remounts after editor rerender, and uses shared payload', () => {
+test('toolbar mounts once, remounts after editor rerender, and uses the latest saved format', async () => {
   const container = element();
   let observe;
   let payload;
+  let storedStyle = 'numbered';
   const context = vm.createContext({
     SubstackToc: toc,
+    SubstackTocPreferences: { loadListStyle: async () => storedStyle },
     SubstackTocEditor: {
       extractPost: () => ({ headings: [{ level: 2, text: 'A & B' }] }),
       pasteToc: value => { payload = value; }
@@ -116,7 +128,40 @@ test('toolbar mounts once, remounts after editor rerender, and uses shared paylo
   container.children = [];
   observe();
   assert.equal(container.children.length, 1);
-  container.children[0].listeners.click({ preventDefault() {}, stopPropagation() {} });
+  await container.children[0].listeners.click({ preventDefault() {}, stopPropagation() {} });
   assert.match(payload.html, /A &amp; B/);
   assert.equal(payload.text, '1. A & B');
+  storedStyle = 'bulleted';
+  await container.children[0].listeners.click({ preventDefault() {}, stopPropagation() {} });
+  assert.match(payload.html, /<ul>/);
+  assert.equal(payload.text, '- A & B');
+});
+
+
+test('saved bullets appear in preview, copy, and injection; switching back persists', async () => {
+  const ui = await popup({ savedStyle: 'bulleted' });
+  assert.equal(ui.node('list-style').value, 'bulleted');
+  assert.equal(ui.node('toc-preview').children[0].children[0].children[0].children[0].textContent, '•');
+  ui.node('copy-all').listeners.click();
+  assert.match(ui.clipboard['text/html'], /^<ul>/);
+  assert.equal(ui.clipboard['text/plain'], '- A & B\n  - Detail');
+  await ui.node('inject-btn').listeners.click();
+  assert.equal(ui.calls[1].args[0].text, '- A & B\n  - Detail');
+  assert.match(ui.calls[1].args[0].html, /<ul>/);
+  ui.node('list-style').value = 'numbered';
+  await ui.node('list-style').listeners.change();
+  assert.equal(ui.savedStyle(), 'numbered');
+  assert.equal(ui.node('toc-preview').children.length, 1);
+  ui.node('copy-all').listeners.click();
+  assert.match(ui.clipboard['text/html'], /^<ol>/);
+});
+
+test('unknown stored format defaults to numbered and preference errors stay visible', async () => {
+  const ui = await popup({ savedStyle: 'invalid', saveFails: true });
+  assert.equal(ui.node('list-style').value, 'numbered');
+  ui.node('list-style').value = 'bulleted';
+  await ui.node('list-style').listeners.change();
+  assert.match(ui.node('error').textContent, /Could not save list style/);
+  assert.equal(ui.node('list-style').disabled, false);
+  assert.equal(ui.savedStyle(), 'invalid');
 });

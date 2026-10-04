@@ -64,44 +64,50 @@
     return `<a href="${escapeHtml(item.url)}">${escapeHtml(item.text)}</a>`;
   }
 
-  function renderNestedHtml(items) {
+  function normalizeListStyle(listStyle) {
+    return listStyle === 'bulleted' ? 'bulleted' : 'numbered';
+  }
+
+  function renderNestedHtml(items, listStyle = 'numbered') {
     if (!items.length) return '';
     const depths = computeDepths(items);
-    let html = '<ol>';
+    const tag = normalizeListStyle(listStyle) === 'bulleted' ? 'ul' : 'ol';
+    let html = `<${tag}>`;
     let previousDepth = 0;
     items.forEach((item, index) => {
       const depth = depths[index];
       if (index > 0) {
         if (depth > previousDepth) {
-          html += '<ol>';
+          html += `<${tag}>`;
         } else {
           html += '</li>';
-          for (let i = previousDepth; i > depth; i--) html += '</ol></li>';
+          for (let i = previousDepth; i > depth; i--) html += `</${tag}></li>`;
         }
       }
       html += `<li>${renderLink(item)}`;
       previousDepth = depth;
     });
     html += '</li>';
-    for (let i = previousDepth; i > 0; i--) html += '</ol></li>';
-    return html + '</ol>';
+    for (let i = previousDepth; i > 0; i--) html += `</${tag}></li>`;
+    return html + `</${tag}>`;
   }
 
-  function renderIndentedText(items) {
+  function renderIndentedText(items, listStyle = 'numbered') {
     const depths = computeDepths(items);
     const numbers = computeHierarchicalNumbers(depths);
-    return items.map((item, i) => `${'  '.repeat(depths[i])}${numbers[i]}. ${item.text}`).join('\n');
+    const bulleted = normalizeListStyle(listStyle) === 'bulleted';
+    return items.map((item, i) => `${'  '.repeat(depths[i])}${bulleted ? '-' : numbers[i] + '.'} ${item.text}`).join('\n');
   }
 
-  function createPastePayload(items) {
+  function createPastePayload(items, listStyle = 'numbered') {
     return {
-      html: `<h1>Table of Contents</h1>${renderNestedHtml(items)}<p></p>`,
-      text: renderIndentedText(items)
+      html: `<h1>Table of Contents</h1>${renderNestedHtml(items, listStyle)}<p></p>`,
+      text: renderIndentedText(items, listStyle)
     };
   }
 
   const api = {
-    generateSlug, parseSubstackUrl, buildToc, computeDepths,
+    normalizeListStyle, generateSlug, parseSubstackUrl, buildToc, computeDepths,
     computeHierarchicalNumbers, renderLink, renderNestedHtml,
     renderIndentedText, createPastePayload
   };

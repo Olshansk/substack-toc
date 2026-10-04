@@ -47,18 +47,20 @@ Then in Chrome:
 
 1. Open any Substack post in **edit mode** (`yourname.substack.com/publish/post/...`)
 2. Click the extension icon in your toolbar
-3. Preview the generated ToC with clickable links
+3. Preview the generated ToC with clickable links and choose **Numbered** or **Bulleted**
 4. Click **Inject into Post** to insert the ToC at your cursor position
 
 You can also:
 - Click any link to test it in a new tab
 - Use **Copy** to copy an individual linked heading
-- Use **Copy All** to copy the formatted ToC, with numbered plain text as a fallback
-- Click **ToC** beside the list buttons in the editor toolbar to insert directly
+- Use **Copy All** to copy the formatted ToC, with matching plain text as a fallback
+- Click **ToC** beside the list buttons in the editor toolbar to insert directly using your saved list style
 
 ## Features
 
 - Extracts h1-h4 headings from your post
+- Nests headings beneath their nearest preceding shallower heading, including skipped levels
+- Supports numbered or bulleted lists and remembers your choice on this device
 - Generates Substack-compatible anchor URLs
 - Handles duplicate headings (adds `-1`, `-2` suffixes)
 - One-click injection into ProseMirror editor
@@ -121,7 +123,7 @@ Use the [Chrome Web Store Developer Console](https://chrome.google.com/webstore/
 ```text
 manifest.json           Chrome entry points, permissions, and release version
 icons/                  Extension icons
-src/shared/toc.js       Pure slug, URL, hierarchy, and rendering functions
+src/shared/            Pure ToC functions and local list-style preferences
 src/content/            Heading extraction, paste adapter, and toolbar entry point
 src/popup/              Popup HTML, CSS, and UI entry point
 tests/                  Node unit tests and browser-adapter test doubles
@@ -131,7 +133,8 @@ docs/store/             Listing copy, submission details, and screenshots
 build/                  Generated release ZIPs (ignored by Git)
 ```
 
-Both browser entry points reuse `SubstackToc` and `SubstackTocEditor`.
+Both browser entry points reuse `SubstackToc`, `SubstackTocEditor`, and `SubstackTocPreferences`.
+The `storage` permission saves only your list-style choice locally; the default is Numbered.
 The shared core also exports through CommonJS for Node tests and reuse without a DOM.
 Classic scripts keep the extension bundler-free; manifest and popup script order load shared helpers before their consumers.
 The paste adapter receives pre-rendered HTML and plain text so Chrome can serialize it without closure dependencies.

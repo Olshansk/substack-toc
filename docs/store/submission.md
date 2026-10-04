@@ -21,6 +21,8 @@ Automatically generate and insert a linked Table of Contents into your Substack 
 
 **What it does:**
 - Scans your draft for headings (H1-H4)
+- Preserves heading hierarchy with nested numbered or bulleted lists
+- Remembers your list-style choice locally for popup and toolbar insertion
 - Generates working anchor links that jump to each section
 - Inserts a formatted, clickable ToC directly into your editor
 - Copy individual section links or the entire ToC to share
@@ -47,6 +49,10 @@ Reads heading elements (H1-H4) from the current Substack editor tab to generate 
 
 Injects the generated Table of Contents HTML into the Substack post editor. The extension uses chrome.scripting.executeScript to insert the formatted ToC at the user's cursor position.
 
+### storage
+
+Stores only the Numbered/Bulleted list-style preference in chrome.storage.local so the popup and editor toolbar use the same format. No post content is stored.
+
 ### Host Permission: *://*.substack.com/*
 
 Required for chrome.scripting.executeScript to inject content scripts into Substack editor pages. The extension only operates on Substack domains where users edit their posts.
@@ -63,7 +69,10 @@ This extension requires access to substack.com to read headings from the post ed
 2. Click "New post" to create a draft
 3. Add a few headings using the toolbar (H1, H2, or H3)
 4. Click the extension icon
-5. Click "Inject" to insert the Table of Contents into your post
+5. Select **Numbered** or **Bulleted** above the preview
+6. Click **Inject into Post** and verify nested indentation
+7. Save and reopen the draft to verify the structure remains intact
+8. Change the style in the popup, then use the editor toolbar **ToC** button to verify it uses the saved choice
 
 ## Privacy Policy URL
 
