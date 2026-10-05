@@ -20,7 +20,7 @@ Generates a Table of Contents with anchor links for Substack posts.
 Automatically generate and insert a linked Table of Contents into your Substack posts with one click.
 
 **What it does:**
-- Scans your draft for headings (H1-H4)
+- Scans your draft or About page for headings (H1-H4)
 - Preserves heading hierarchy with nested numbered or bulleted lists
 - Remembers your list-style choice locally for popup and toolbar insertion
 - Generates working anchor links that jump to each section
@@ -61,7 +61,7 @@ Required for chrome.scripting.executeScript to inject content scripts into Subst
 
 ### Host permission justification
 
-This extension requires access to substack.com to read headings from the post editor and inject the generated Table of Contents. It only activates on Substack's post editing pages (/publish/post/*) and does not access any other websites or user data.
+This extension requires access to substack.com to read headings from the post editor and inject the generated Table of Contents. It supports post editors, the About settings editor (`bodyField=subscribe_content`), and published About pages for preview and copy. It does not access other websites.
 
 ## Test Instructions
 

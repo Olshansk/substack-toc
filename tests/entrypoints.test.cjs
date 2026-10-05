@@ -64,7 +64,7 @@ test('popup loads moved extraction files and sends a shared paste payload', asyn
   const ui = await popup();
   assert.equal(ui.node('subtitle').textContent, 'Draft');
   assert.equal(ui.node('inject-btn').disabled, false);
-  assert.deepEqual(Array.from(ui.calls[0].files), ['src/content/editor.js', 'src/content/extract.js']);
+  assert.deepEqual(Array.from(ui.calls[0].files), ['src/shared/toc.js', 'src/content/editor.js', 'src/content/extract.js']);
   await ui.node('inject-btn').listeners.click();
   assert.match(ui.calls[1].args[0].html, /A &amp; B/);
   assert.equal(ui.calls[1].args[0].text, '1. A & B\n  1.1. Detail');
@@ -164,4 +164,23 @@ test('unknown stored format defaults to numbered and preference errors stay visi
   assert.match(ui.node('error').textContent, /Could not save list style/);
   assert.equal(ui.node('list-style').disabled, false);
   assert.equal(ui.savedStyle(), 'invalid');
+});
+
+test('published About page supports preview and copy without offering insertion', async () => {
+  const ui = await popup({ url: 'https://example.substack.com/about' });
+  assert.equal(ui.node('inject-btn').disabled, true);
+  assert.match(ui.node('inject-btn').textContent, /About editor/);
+  ui.node('copy-all').listeners.click();
+  assert.match(ui.clipboard['text/html'], /about#%C2%A7a-b/);
+  await ui.node('inject-btn').listeners.click();
+  assert.equal(ui.calls.length, 1);
+});
+
+test('About editor supports insertion with About fragments', async () => {
+  const ui = await popup({ url: 'https://example.substack.com/publish/settings/edit?bodyField=subscribe_content' });
+  assert.equal(ui.node('inject-btn').disabled, false);
+  assert.equal(ui.node('inject-btn').textContent, 'Inject into About Page');
+  await ui.node('inject-btn').listeners.click();
+  assert.match(ui.calls[1].args[0].html, /about#%C2%A7a-b/);
+  assert.doesNotMatch(ui.calls[1].args[0].html, /\/i\/undefined/);
 });

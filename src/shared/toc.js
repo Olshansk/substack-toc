@@ -16,21 +16,31 @@
       const parsed = new URL(url);
       const host = parsed.hostname.match(/^([a-z0-9-]+)\.substack\.com$/);
       const post = parsed.pathname.match(/^\/publish\/post\/(\d+)(?:\/|$)/);
-      if (!/^https?:$/.test(parsed.protocol) || !host || !post) return null;
+      if (!/^https?:$/.test(parsed.protocol) || !host) return null;
+      if (/^\/about\/?$/.test(parsed.pathname)) {
+        return { subdomain: host[1], pageType: 'about', editable: false };
+      }
+      if (/^\/publish\/settings\/edit\/?$/.test(parsed.pathname) && parsed.searchParams.get('bodyField') === 'subscribe_content') {
+        return { subdomain: host[1], pageType: 'about', editable: true };
+      }
+      if (!post) return null;
       return { subdomain: host[1], postId: post[1] };
     } catch {
       return null;
     }
   }
 
-  function buildToc(headings, { subdomain, postId }) {
+  function buildToc(headings, { subdomain, postId, pageType }) {
     const counts = new Map();
-    return headings.map(({ text, level }) => {
+    return headings.map(({ text, level, anchorId }) => {
       const base = generateSlug(text);
       const count = counts.get(base) || 0;
       counts.set(base, count + 1);
       const slug = count === 0 ? base : `${base}-${count}`;
-      return { text, level, url: `https://${subdomain}.substack.com/i/${postId}/${slug}` };
+      const url = pageType === 'about'
+        ? `https://${subdomain}.substack.com/about#${encodeURIComponent(anchorId || '§' + slug)}`
+        : `https://${subdomain}.substack.com/i/${postId}/${slug}`;
+      return { text, level, url };
     });
   }
 

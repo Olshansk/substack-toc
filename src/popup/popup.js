@@ -47,6 +47,7 @@ function copyRichText(html, plainText, button) {
 // Store ToC data for injection
 let tocData = [];
 let currentTab = null;
+let canInject = false;
 let listStyle = 'numbered';
 
 // Main logic
@@ -70,14 +71,16 @@ async function init() {
     if (!post) {
       loadingEl.style.display = 'none';
       errorEl.style.display = 'flex';
-      errorEl.textContent = 'Open a Substack post in edit mode first.';
+      errorEl.textContent = 'Open a Substack post editor or About page first.';
       return;
     }
+
+    canInject = post.editable !== false;
 
     // Inject content script and get headings
     const results = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      files: ['src/content/editor.js', 'src/content/extract.js']
+      files: ['src/shared/toc.js', 'src/content/editor.js', 'src/content/extract.js']
     });
 
     const { postTitle, headings } = results[0]?.result || { postTitle: '', headings: [] };
@@ -91,7 +94,7 @@ async function init() {
 
     if (headings.length === 0) {
       errorEl.style.display = 'flex';
-      errorEl.textContent = 'No headings found in this post.';
+      errorEl.textContent = 'No headings found in this page.';
       return;
     }
 
@@ -173,7 +176,11 @@ async function init() {
     });
 
     // Enable inject button
-    injectBtn.disabled = false;
+    injectBtn.disabled = !canInject;
+    injectBtn.textContent = canInject ? 'Inject into ' + (post.pageType === 'about' ? 'About Page' : 'Post') : 'Open the About editor to insert';
+    document.querySelector('.hint').textContent = canInject
+      ? 'Inserts ToC at cursor position in editor'
+      : 'Copy the ToC here, or edit your About page to insert it.';
 
     // Copy all button handler
     copyAllBtn.addEventListener('click', () => {
@@ -191,7 +198,7 @@ async function init() {
 
 // Handle inject button click
 document.getElementById('inject-btn').addEventListener('click', async () => {
-  if (!currentTab || tocData.length === 0) return;
+  if (!currentTab || !canInject || tocData.length === 0) return;
 
   const injectBtn = document.getElementById('inject-btn');
   injectBtn.disabled = true;

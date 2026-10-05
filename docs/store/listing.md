@@ -31,6 +31,7 @@ This extension automatically:
 - Copy individual anchor URLs
 - Copy the formatted ToC with a matching plain-text fallback
 - Handles duplicate headings automatically
+- Supports About-page editing and copying a ToC from the published About page
 - Works with drafts and published posts
 
 **How to Use**
@@ -79,4 +80,5 @@ Productivity
 | `storage` | Saves only the selected list style locally for the popup and toolbar |
 
 The manifest also requests `*://*.substack.com/*` host access.
-The toolbar content scripts run automatically on `/publish/post/*` editor pages.
+The toolbar content scripts load on post editor and settings routes, and add the ToC button only in post or About-page editors.
+The popup can also read published About pages for preview and copy.

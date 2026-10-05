@@ -27,7 +27,8 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*.substack.com/publish/post/*"
+        "*://*.substack.com/publish/post/*",
+        "*://*.substack.com/publish/settings*"
       ],
       "js": [
         "src/shared/toc.js",

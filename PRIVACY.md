@@ -18,7 +18,7 @@ The preference is not synced or sent to any external server.
 ## How It Works
 
 - The extension runs entirely in your browser
-- It reads headings from the Substack post you are currently editing
+- It reads headings from the Substack post or About page you are viewing or editing
 - It generates anchor links using the post URL visible in your browser
 - No data is sent to any external server
 
@@ -29,7 +29,7 @@ The extension requests these permissions:
 - **activeTab**: To read headings from the current Substack editor tab
 - **scripting**: To inject the Table of Contents into the editor
 - **storage**: To remember your list-style preference locally for the popup and toolbar
-- **Host access (`*://*.substack.com/*`)**: To run the toolbar integration on Substack editor pages
+- **Host access (`*://*.substack.com/*`)**: To run the toolbar integration on Substack post and About settings editor pages
 
 Copying runs in response to a button click; the manifest does not request `clipboardWrite`.
 

@@ -45,7 +45,7 @@ Then in Chrome:
 
 ## Usage
 
-1. Open any Substack post in **edit mode** (`yourname.substack.com/publish/post/...`)
+1. Open a Substack post in **edit mode**, or open **Settings → Website → About page → Edit**
 2. Click the extension icon in your toolbar
 3. Preview the generated ToC with clickable links and choose **Numbered** or **Bulleted**
 4. Click **Inject into Post** to insert the ToC at your cursor position
@@ -65,7 +65,8 @@ You can also:
 - Handles duplicate headings (adds `-1`, `-2` suffixes)
 - One-click injection into ProseMirror editor
 - Copy individual links or the full formatted ToC
-- Works with both published and draft posts
+- Works with both published and draft posts in the editor
+- Supports About-page editing and preview/copy from the published About page
 
 ## Development
 
@@ -146,6 +147,10 @@ Substack uses a predictable anchor URL format:
 https://{subdomain}.substack.com/i/{postId}/{slug}
 ```
 
+About pages use section fragments such as `https://yourname.substack.com/about#%C2%A7why-subscribe`.
+The extension recognizes the About settings editor by `bodyField=subscribe_content` and reuses existing heading IDs when copying from the published About page.
+Published About pages offer preview and copy; insertion requires opening their editor.
+
 The extension:
 1. Extracts `subdomain` and `postId` from the edit URL
 2. Generates slugs by lowercasing headings and replacing spaces with hyphens
@@ -153,8 +158,9 @@ The extension:
 
 ## Limitations
 
-- Only works in Substack's post editor (not the reader view)
-- Anchor links won't work until the post is published
+- Post insertion requires the post editor; About-page insertion requires the About settings editor
+- Published About-page preview excludes navigation, subscription prompts, and the People section
+- New or changed heading links work after the post or About page is saved/published
 - Slug generation follows Substack's algorithm but edge cases may exist
 
 ## License

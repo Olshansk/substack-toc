@@ -11,17 +11,12 @@
 
   // Main ToC button click handler
   async function handleTocClick() {
-    const { headings } = extractPost();
+    const post = parseSubstackUrl(window.location.href);
+    if (!post || post.editable === false) return;
+    const { headings } = extractPost(post);
 
     if (headings.length === 0) {
-      alert('No headings found in this post. Add some headings (H1-H4) first.');
-      return;
-    }
-
-    const post = parseSubstackUrl(window.location.href);
-
-    if (!post) {
-      alert('Could not find post ID in URL. Make sure you are editing a post.');
+      alert('No headings found in this page. Add some headings (H1-H4) first.');
       return;
     }
 
@@ -57,6 +52,8 @@
 
   // Find the list buttons container and inject ToC button
   function injectToolbarButton() {
+    const page = parseSubstackUrl(window.location.href);
+    if (!page || page.editable === false) return false;
     // Check if we already added the button
     if (document.querySelector('button[aria-label="Table of Contents"]')) {
       return true;

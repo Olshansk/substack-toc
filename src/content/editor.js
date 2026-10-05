@@ -1,17 +1,22 @@
 (function(root) {
   'use strict';
 
-  function extractPost() {
+  function extractPost(page = {}) {
+    const publishedAbout = page.pageType === 'about' && !page.editable;
+    const content = publishedAbout
+      ? document.querySelector('.about-page .content-about .body.markup')
+      : document.querySelector('.post-editor.markup') || document.querySelector('.ProseMirror[contenteditable="true"]');
     const title = document.querySelector('[data-testid="post-title"]') ||
       document.querySelector('.page-title');
-    const elements = document.querySelectorAll(
-      '.post-editor.markup h1, .post-editor.markup h2, .post-editor.markup h3, .post-editor.markup h4'
-    );
-    const headings = Array.from(elements, element => ({
-      level: Number(element.tagName[1]),
-      text: element.textContent.trim()
-    })).filter(heading => heading.text);
-    return { postTitle: (title?.value || title?.textContent || '').trim(), headings };
+    const headings = Array.from(content?.querySelectorAll('h1, h2, h3, h4') || [], element => {
+      const heading = { level: Number(element.tagName[1]), text: element.textContent.trim() };
+      if (publishedAbout) heading.anchorId = element.querySelector('.header-anchor[id]')?.id || element.id;
+      return heading;
+    }).filter(heading => heading.text);
+    return {
+      postTitle: page.pageType === 'about' ? 'About page' : (title?.value || title?.textContent || '').trim(),
+      headings
+    };
   }
 
   // Serialized by chrome.scripting.executeScript: keep this function self-contained.

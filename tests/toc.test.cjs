@@ -81,3 +81,31 @@ test('invalid or absent list style uses the numbered default', () => {
     assert.deepEqual(toc.createPastePayload(items, style), toc.createPastePayload(items));
   }
 });
+
+test('About URLs distinguish published pages from the specific About settings editor', () => {
+  for (const url of ['https://example.substack.com/about', 'https://example.substack.com/about/#section']) {
+    assert.deepEqual(toc.parseSubstackUrl(url), { subdomain: 'example', pageType: 'about', editable: false });
+  }
+  assert.deepEqual(toc.parseSubstackUrl('https://example.substack.com/publish/settings/edit?title=About%20page&bodyField=subscribe_content'), {
+    subdomain: 'example', pageType: 'about', editable: true
+  });
+  for (const url of ['https://example.substack.com/publish/settings', 'https://example.substack.com/publish/settings/edit?bodyField=welcome_email',
+    'https://example.substack.com/publish/settings/edit?title=About%20page', 'https://example.substack.com/about-us', 'https://evil.test/about']) {
+    assert.equal(toc.parseSubstackUrl(url), null);
+  }
+});
+
+test('About links use section fragments, preserve published IDs, and count duplicate draft headings', () => {
+  const page = { subdomain: 'example', pageType: 'about' };
+  const items = toc.buildToc([
+    { level: 2, text: 'Why subscribe?' },
+    { level: 2, text: 'Why subscribe?' },
+    { level: 3, text: 'Custom heading', anchorId: '§actual-id' }
+  ], page);
+  assert.deepEqual(items.map(item => item.url), [
+    'https://example.substack.com/about#%C2%A7why-subscribe',
+    'https://example.substack.com/about#%C2%A7why-subscribe-1',
+    'https://example.substack.com/about#%C2%A7actual-id'
+  ]);
+  assert.equal(toc.buildToc([{ level: 1, text: 'Example' }], post)[0].url, 'https://example.substack.com/i/123/example');
+});
