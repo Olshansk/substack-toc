@@ -22,7 +22,7 @@ Automatically generate and insert a linked Table of Contents into your Substack 
 **What it does:**
 - Scans your draft or About page for headings (H1-H4)
 - Preserves heading hierarchy with nested numbered or bulleted lists
-- Remembers your list-style choice locally for popup and toolbar insertion
+- Remembers your list-style and outline-depth choices locally for popup and toolbar insertion
 - Generates working anchor links that jump to each section
 - Inserts a formatted, clickable ToC directly into your editor
 - Copy individual section links or the entire ToC to share
@@ -51,7 +51,7 @@ Injects the generated Table of Contents HTML into the Substack post editor. The 
 
 ### storage
 
-Stores only the Numbered/Bulleted list-style preference in chrome.storage.local so the popup and editor toolbar use the same format. No post content is stored.
+Stores only the Numbered/Bulleted list style and outline-depth preference in chrome.storage.local so the popup and editor toolbar use the same format. No post content is stored.
 
 ### Host Permission: *://*.substack.com/*
 

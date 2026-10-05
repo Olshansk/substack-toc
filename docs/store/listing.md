@@ -26,7 +26,8 @@ This extension automatically:
 **Features**
 - One-click ToC generation
 - Nested entries that follow heading hierarchy
-- Numbered or bulleted lists with a saved local preference
+- Show all levels or limit the ToC to the first one, two, or three outline levels
+- Numbered or bulleted lists with a saved local preferences
 - Preview links before injecting
 - Copy individual anchor URLs
 - Copy the formatted ToC with a matching plain-text fallback
@@ -77,7 +78,7 @@ Productivity
 |------------|---------------|
 | `activeTab` | Required to read headings from the current Substack post and inject the ToC |
 | `scripting` | Required to execute content script that extracts headings and injects ToC HTML |
-| `storage` | Saves only the selected list style locally for the popup and toolbar |
+| `storage` | Saves only the selected list style and outline depth locally for the popup and toolbar |
 
 The manifest also requests `*://*.substack.com/*` host access.
 The toolbar content scripts load on post editor and settings routes, and add the ToC button only in post or About-page editors.

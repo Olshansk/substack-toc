@@ -109,3 +109,28 @@ test('About links use section fragments, preserve published IDs, and count dupli
   ]);
   assert.equal(toc.buildToc([{ level: 1, text: 'Example' }], post)[0].url, 'https://example.substack.com/i/123/example');
 });
+
+test('depth limits count outline levels rather than literal heading tags', () => {
+  const items = toc.buildToc(headings([2, 3, 4, 2, 4]), post);
+  assert.deepEqual(toc.filterTocByDepth(items, 1).map(item => item.text), ['Section 1', 'Section 4']);
+  assert.deepEqual(toc.filterTocByDepth(items, 2).map(item => item.text), ['Section 1', 'Section 2', 'Section 4', 'Section 5']);
+  assert.deepEqual(toc.filterTocByDepth(items, 3), items);
+  for (const limit of [0, undefined, null, -1, 4, 'bad']) assert.deepEqual(toc.filterTocByDepth(items, limit), items);
+  assert.deepEqual(toc.filterTocByDepth([], 1), []);
+});
+
+test('filtering preserves duplicate anchors even when the first occurrence is hidden', () => {
+  const input = [{ level: 2, text: 'Intro' }, { level: 3, text: 'Setup' }, { level: 2, text: 'Setup' }];
+  for (const page of [post, { subdomain: 'example', pageType: 'about' }]) {
+    const all = toc.buildToc(input, page);
+    const filtered = toc.filterTocByDepth(all, 1);
+    assert.equal(filtered[1].url, all[2].url);
+    assert.match(filtered[1].url, /setup-1$/);
+    assert.equal(all.length, 3);
+    for (const style of ['numbered', 'bulleted']) {
+      const html = toc.renderNestedHtml(filtered, style);
+      assert.equal((html.match(/<li>/g) || []).length, 2);
+      assert.ok(html.includes(all[2].url));
+    }
+  }
+});

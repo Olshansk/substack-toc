@@ -1,10 +1,10 @@
 'use strict';
 
 const {
-  parseSubstackUrl, buildToc, computeDepths, computeHierarchicalNumbers,
+  normalizeMaxDepth, filterTocByDepth, parseSubstackUrl, buildToc, computeDepths, computeHierarchicalNumbers,
   renderLink, renderNestedHtml, renderIndentedText, createPastePayload
 } = globalThis.SubstackToc;
-const { loadListStyle, saveListStyle } = globalThis.SubstackTocPreferences;
+const { loadPreferences, savePreferences } = globalThis.SubstackTocPreferences;
 
 // Copy rich text (HTML + plain text) to clipboard with visual feedback
 function copyRichText(html, plainText, button) {
@@ -49,6 +49,7 @@ let tocData = [];
 let currentTab = null;
 let canInject = false;
 let listStyle = 'numbered';
+let maxDepth = 0;
 
 // Main logic
 async function init() {
@@ -57,6 +58,7 @@ async function init() {
   const contentEl = document.getElementById('content');
   const preview = document.getElementById('toc-preview');
   const listStyleSelect = document.getElementById('list-style');
+  const maxDepthSelect = document.getElementById('max-depth');
   const injectBtn = document.getElementById('inject-btn');
   const subtitleEl = document.getElementById('subtitle');
   const tocCountEl = document.querySelector('.toc-count');
@@ -100,13 +102,16 @@ async function init() {
 
     // Show content section
     contentEl.style.display = 'block';
-    tocCountEl.textContent = `${headings.length} heading${headings.length === 1 ? '' : 's'}`;
-
-    tocData = buildToc(headings, post);
-    listStyle = await loadListStyle();
+    const allTocData = buildToc(headings, post);
+    ({ listStyle, maxDepth } = await loadPreferences());
     listStyleSelect.value = listStyle;
+    maxDepthSelect.value = String(maxDepth);
 
     function renderPreview() {
+      tocData = filterTocByDepth(allTocData, maxDepth);
+      tocCountEl.textContent = tocData.length === allTocData.length
+        ? `${tocData.length} heading${tocData.length === 1 ? '' : 's'}`
+        : `${tocData.length} of ${allTocData.length} headings`;
       const listTag = listStyle === 'bulleted' ? 'ul' : 'ol';
       const tocList = document.createElement(listTag);
       tocList.id = 'toc-list';
@@ -160,20 +165,25 @@ async function init() {
     }
     renderPreview();
 
-    listStyleSelect.addEventListener('change', async () => {
+    async function updatePreferences() {
       listStyle = listStyleSelect.value;
+      maxDepth = normalizeMaxDepth(maxDepthSelect.value);
       renderPreview();
       listStyleSelect.disabled = true;
+      maxDepthSelect.disabled = true;
       try {
-        await saveListStyle(listStyle);
+        await savePreferences({ listStyle, maxDepth });
       } catch (error) {
         errorEl.style.display = 'flex';
-        errorEl.textContent = 'Could not save list style. The toolbar will use the previous setting.';
+        errorEl.textContent = 'Could not save ToC settings. The toolbar will use the previous settings.';
         console.error('Preference error:', error);
       } finally {
         listStyleSelect.disabled = false;
+        maxDepthSelect.disabled = false;
       }
-    });
+    }
+    listStyleSelect.addEventListener('change', updatePreferences);
+    maxDepthSelect.addEventListener('change', updatePreferences);
 
     // Enable inject button
     injectBtn.disabled = !canInject;
