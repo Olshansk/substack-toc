@@ -47,7 +47,7 @@ Then in Chrome:
 
 1. Open a Substack post in **edit mode**, or open **Settings → Website → About page → Edit**
 2. Click the extension icon in your toolbar
-3. Preview the generated ToC with clickable links and choose **Numbered** or **Bulleted**
+3. Preview the generated ToC with clickable links and choose **Numbered** or **Bulleted**, and select how many outline levels to show
 4. Click **Inject into Post** to insert the ToC at your cursor position
 
 You can also:
@@ -61,6 +61,7 @@ You can also:
 - Extracts h1-h4 headings from your post
 - Nests headings beneath their nearest preceding shallower heading, including skipped levels
 - Supports numbered or bulleted lists and remembers your choice on this device
+- Shows all outline levels, only the top level, or the first two or three levels
 - Generates Substack-compatible anchor URLs
 - Handles duplicate headings (adds `-1`, `-2` suffixes)
 - One-click injection into ProseMirror editor
@@ -135,7 +136,9 @@ build/                  Generated release ZIPs (ignored by Git)
 ```
 
 Both browser entry points reuse `SubstackToc`, `SubstackTocEditor`, and `SubstackTocPreferences`.
-The `storage` permission saves only your list-style choice locally; the default is Numbered.
+The `storage` permission saves your list style and outline depth locally; defaults are Numbered and All levels.
+Depth counts the outline hierarchy, not literal H1/H2 tags. Links are generated before filtering, preserving duplicate-heading anchors.
+See the [depth examples and manual review steps](docs/examples/toc-depth.md).
 The shared core also exports through CommonJS for Node tests and reuse without a DOM.
 Classic scripts keep the extension bundler-free; manifest and popup script order load shared helpers before their consumers.
 The paste adapter receives pre-rendered HTML and plain text so Chrome can serialize it without closure dependencies.
