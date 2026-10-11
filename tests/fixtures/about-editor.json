@@ -1,0 +1,10 @@
+{
+  "url": "https://zimberdvar.substack.com/publish/settings/edit?title=About%20page&bodyField=subscribe_content&redirect=https%3A%2F%2Fzimberdvar.substack.com%2Fabout",
+  "headings": [
+    { "level": 2, "text": "Why subscribe?" },
+    { "level": 2, "text": "What is this?" },
+    { "level": 2, "text": "How to print or save to PDF?" },
+    { "level": 3, "text": "Step 1: Log in" },
+    { "level": 3, "text": "Step 2: Save as PDF" }
+  ]
+}
