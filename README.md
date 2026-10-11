@@ -137,7 +137,7 @@ build/                  Generated release ZIPs (ignored by Git)
 
 Both browser entry points reuse `SubstackToc`, `SubstackTocEditor`, and `SubstackTocPreferences`.
 The `storage` permission saves your list style and outline depth locally; defaults are Numbered and All levels.
-Depth counts the outline hierarchy, not literal H1/H2 tags. Links are generated before filtering, preserving duplicate-heading anchors.
+Depth starts at the shallowest heading level: in an H2–H4 document, First two levels includes H2/H3 and excludes H4, even when an H4 follows H2 directly. Links are generated before filtering, preserving duplicate-heading anchors.
 See the [depth examples and manual review steps](docs/examples/toc-depth.md).
 The shared core also exports through CommonJS for Node tests and reuse without a DOM.
 Classic scripts keep the extension bundler-free; manifest and popup script order load shared helpers before their consumers.

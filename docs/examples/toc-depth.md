@@ -1,7 +1,7 @@
 # ToC depth example <!-- omit in toc -->
 
 Keep the full document structure while choosing how much appears in its ToC.
-These examples use the extension's shared renderer. The source begins with H2, so H2 counts as the top outline level.
+These examples use the extension's shared renderer. The source begins with H2, so H2 counts as the top outline level. First two levels includes H2/H3; H4 stays excluded even if H3 is skipped.
 
 - [All levels](#all-levels)
 - [First two levels](#first-two-levels)

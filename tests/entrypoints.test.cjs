@@ -218,3 +218,11 @@ test('missing or invalid depth preferences preserve the full outline', async () 
     assert.equal(ui.node('.toc-count').textContent, '2 headings');
   }
 });
+
+
+test('issue #3: First two levels hides H4 even without an intervening H3', async () => {
+  const ui = await popup({ savedDepth: 2 });
+  assert.equal(ui.node('.toc-count').textContent, '1 of 2 headings');
+  ui.node('copy-all').listeners.click();
+  assert.equal(ui.clipboard['text/plain'], '1. A & B');
+});

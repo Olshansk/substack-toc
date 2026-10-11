@@ -110,10 +110,10 @@ test('About links use section fragments, preserve published IDs, and count dupli
   assert.equal(toc.buildToc([{ level: 1, text: 'Example' }], post)[0].url, 'https://example.substack.com/i/123/example');
 });
 
-test('depth limits count outline levels rather than literal heading tags', () => {
+test('depth limits start at the shallowest heading and exclude skipped deeper levels', () => {
   const items = toc.buildToc(headings([2, 3, 4, 2, 4]), post);
   assert.deepEqual(toc.filterTocByDepth(items, 1).map(item => item.text), ['Section 1', 'Section 4']);
-  assert.deepEqual(toc.filterTocByDepth(items, 2).map(item => item.text), ['Section 1', 'Section 2', 'Section 4', 'Section 5']);
+  assert.deepEqual(toc.filterTocByDepth(items, 2).map(item => item.text), ['Section 1', 'Section 2', 'Section 4']);
   assert.deepEqual(toc.filterTocByDepth(items, 3), items);
   for (const limit of [0, undefined, null, -1, 4, 'bad']) assert.deepEqual(toc.filterTocByDepth(items, limit), items);
   assert.deepEqual(toc.filterTocByDepth([], 1), []);
@@ -132,5 +132,15 @@ test('filtering preserves duplicate anchors even when the first occurrence is hi
       assert.equal((html.match(/<li>/g) || []).length, 2);
       assert.ok(html.includes(all[2].url));
     }
+  }
+});
+
+
+test('issue #3: H2/H3 scope excludes every H4, including skipped and leading H4 headings', () => {
+  for (const levels of [[2, 3, 4, 2, 4], [4, 2, 4, 3], [2, 4], [3, 4, 2]]) {
+    const items = toc.buildToc(headings(levels), post);
+    const filtered = toc.filterTocByDepth(items, 2);
+    assert.deepEqual(filtered.map(item => item.level), levels.filter(level => level <= 3));
+    for (const item of filtered) assert.ok(items.includes(item));
   }
 });

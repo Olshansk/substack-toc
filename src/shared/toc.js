@@ -62,9 +62,9 @@
   // Filter already-built links so hidden headings still count toward duplicate slugs.
   function filterTocByDepth(items, maxDepth) {
     const limit = normalizeMaxDepth(maxDepth);
-    if (!limit) return items;
-    const depths = computeDepths(items);
-    return items.filter((item, index) => depths[index] < limit);
+    if (!limit || !items.length) return items;
+    const firstLevel = Math.min(...items.map(item => item.level));
+    return items.filter(item => item.level < firstLevel + limit);
   }
 
   function computeHierarchicalNumbers(depths) {
