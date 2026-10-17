@@ -226,3 +226,15 @@ test('issue #3: First two levels hides H4 even without an intervening H3', async
   ui.node('copy-all').listeners.click();
   assert.equal(ui.clipboard['text/plain'], '1. A & B');
 });
+
+test('issue #4: exact reported URL enables insertion while unrelated settings stay blocked', async () => {
+  const fixture = require('./fixtures/about-editor.json');
+  const ui = await popup({ url: fixture.url });
+  assert.equal(ui.node('inject-btn').disabled, false);
+  assert.equal(ui.node('inject-btn').textContent, 'Inject into About Page');
+  await ui.node('inject-btn').listeners.click();
+  assert.match(ui.calls[1].args[0].html, /zimberdvar\.substack\.com\/about#%C2%A7/);
+  const unrelated = await popup({ url: fixture.url.replace('bodyField=subscribe_content', 'bodyField=welcome_email') });
+  assert.equal(unrelated.calls.length, 0);
+  assert.equal(unrelated.node('error').style.display, 'flex');
+});
