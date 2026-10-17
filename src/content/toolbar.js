@@ -6,7 +6,7 @@
   if (window.__substackTocInjected) return;
   window.__substackTocInjected = true;
 
-  const { parseSubstackUrl, buildToc, createPastePayload } = globalThis.SubstackToc;
+  const { parseSubstackUrl, buildToc, filterTocByDepth, createPastePayload } = globalThis.SubstackToc;
   const { extractPost, pasteToc } = globalThis.SubstackTocEditor;
 
   // Main ToC button click handler
@@ -21,8 +21,9 @@
     }
 
     try {
-      const listStyle = await globalThis.SubstackTocPreferences.loadListStyle();
-      pasteToc(createPastePayload(buildToc(headings, post), listStyle));
+      const { listStyle, maxDepth } = await globalThis.SubstackTocPreferences.loadPreferences();
+      const items = filterTocByDepth(buildToc(headings, post), maxDepth);
+      pasteToc(createPastePayload(items, listStyle));
     } catch (error) {
       alert(error.message);
     }

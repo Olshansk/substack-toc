@@ -55,6 +55,18 @@
     });
   }
 
+  function normalizeMaxDepth(value) {
+    return ['1', '2', '3'].includes(String(value)) ? Number(value) : 0;
+  }
+
+  // Filter already-built links so hidden headings still count toward duplicate slugs.
+  function filterTocByDepth(items, maxDepth) {
+    const limit = normalizeMaxDepth(maxDepth);
+    if (!limit || !items.length) return items;
+    const firstLevel = Math.min(...items.map(item => item.level));
+    return items.filter(item => item.level < firstLevel + limit);
+  }
+
   function computeHierarchicalNumbers(depths) {
     const counters = [];
     return depths.map(depth => {
@@ -117,7 +129,7 @@
   }
 
   const api = {
-    normalizeListStyle, generateSlug, parseSubstackUrl, buildToc, computeDepths,
+    normalizeMaxDepth, filterTocByDepth, normalizeListStyle, generateSlug, parseSubstackUrl, buildToc, computeDepths,
     computeHierarchicalNumbers, renderLink, renderNestedHtml,
     renderIndentedText, createPastePayload
   };

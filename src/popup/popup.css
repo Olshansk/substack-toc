@@ -249,7 +249,8 @@ main {
   color: #666;
 }
 
-#list-style {
+#list-style,
+#max-depth {
   padding: 6px 8px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
