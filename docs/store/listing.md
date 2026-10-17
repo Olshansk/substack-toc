@@ -27,7 +27,7 @@ This extension automatically:
 - One-click ToC generation
 - Nested entries that follow heading hierarchy
 - Show all levels or limit the ToC to the first one, two, or three outline levels
-- Numbered or bulleted lists with a saved local preferences
+- Numbered or bulleted lists with saved local preferences
 - Preview links before injecting
 - Copy individual anchor URLs
 - Copy the formatted ToC with a matching plain-text fallback
